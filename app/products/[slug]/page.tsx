@@ -31,6 +31,9 @@ export function generateMetadata({
   const description = `${product.tagline} — ${product.description.slice(0, 120)}…`
   const url = `${SITE_URL}/products/${product.slug}`
 
+  // Derive the static OG image path: same folder as the main image, og.png
+  const ogImageUrl = `${SITE_URL}${product.image.replace(/\/[^/]+$/, "/og.png")}`
+
   return {
     title: product.name,
     description,
@@ -41,13 +44,13 @@ export function generateMetadata({
       siteName: "mokhaLab",
       locale: "en_CA",
       type: "website",
-      images: [{ url: `${SITE_URL}${product.image}` }],
+      images: [{ url: ogImageUrl, width: 1200, height: 630, alt: product.name }],
     },
     twitter: {
       card: "summary_large_image",
       title: `${product.name} | mokhaLab`,
       description,
-      images: [`${SITE_URL}${product.image}`],
+      images: [ogImageUrl],
     },
     alternates: { canonical: url },
   }
