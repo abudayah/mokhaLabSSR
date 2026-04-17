@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { SITE_URL } from "@/lib/image-url"
 import Link from "next/link"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
@@ -13,20 +14,20 @@ export const metadata: Metadata = {
     title: "mokhaLab | Precision Espresso Tools",
     description:
       "Precision-engineered espresso tools for the serious barista. Tampers, distributors, WDT tools and more — crafted in Canada.",
-    url: "https://www.mokhalab.ca/",
+    url: `${SITE_URL}/`,
     siteName: "mokhaLab",
     locale: "en_CA",
     type: "website",
-    images: [{ url: "https://www.mokhalab.ca/images/hero.webp" }],
+    images: [{ url: `${SITE_URL}/images/hero.webp` }],
   },
   twitter: {
     card: "summary_large_image",
     title: "mokhaLab | Precision Espresso Tools",
     description:
       "Precision-engineered espresso tools for the serious barista. Tampers, distributors, WDT tools and more — crafted in Canada.",
-    images: ["https://www.mokhalab.ca/images/hero.webp"],
+    images: [`${SITE_URL}/images/hero.webp`],
   },
-  alternates: { canonical: "https://www.mokhalab.ca/" },
+  alternates: { canonical: `${SITE_URL}/` },
 }
 
 export default function HomePage() {

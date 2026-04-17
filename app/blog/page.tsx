@@ -1,6 +1,7 @@
 import { generateClient } from "aws-amplify/data"
 import { Amplify } from "aws-amplify"
 import type { Metadata } from "next"
+import { SITE_URL } from "@/lib/image-url"
 import type { Schema } from "@/amplify/data/resource"
 import type { BlogPost } from "@/lib/blog-posts"
 import outputs from "@/amplify_outputs.json"
@@ -20,20 +21,20 @@ export const metadata: Metadata = {
     title: "Blog | mokhaLab",
     description:
       "Stories about coffee culture, brewing rituals, and the philosophy behind mokhaLab tools.",
-    url: "https://www.mokhalab.ca/blog/",
+    url: `${SITE_URL}/blog/`,
     siteName: "mokhaLab",
     locale: "en_CA",
     type: "website",
-    images: [{ url: "https://www.mokhalab.ca/images/hero.webp" }],
+    images: [{ url: `${SITE_URL}/images/hero.webp` }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Blog | mokhaLab",
     description:
       "Stories about coffee culture, brewing rituals, and the philosophy behind mokhaLab tools.",
-    images: ["https://www.mokhalab.ca/images/hero.webp"],
+    images: [`${SITE_URL}/images/hero.webp`],
   },
-  alternates: { canonical: "https://www.mokhalab.ca/blog/" },
+  alternates: { canonical: `${SITE_URL}/blog/` },
 }
 
 async function getPosts(): Promise<BlogPost[]> {

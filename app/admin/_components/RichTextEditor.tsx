@@ -5,6 +5,7 @@ import type ReactQuill from "react-quill"
 import { uploadData } from "aws-amplify/storage"
 import Textarea from "@cloudscape-design/components/textarea"
 import outputs from "@/amplify_outputs.json"
+import { resolveImageUrl } from "@/lib/image-url"
 
 interface RichTextEditorProps {
   value: string
@@ -13,13 +14,7 @@ interface RichTextEditorProps {
   readOnly?: boolean
 }
 
-const storage = (outputs as { storage?: { bucket_name?: string; aws_region?: string } }).storage
-const BUCKET = storage?.bucket_name ?? ""
-const REGION = storage?.aws_region ?? "us-west-2"
 
-function s3KeyToUrl(key: string): string {
-  return `https://${BUCKET}.s3.${REGION}.amazonaws.com/${key}`
-}
 
 const TOOLBAR_OPTIONS = [
   [{ header: [2, 3, false] }],
@@ -77,7 +72,7 @@ export default function RichTextEditor({
         options: { contentType: file.type },
       }).result
 
-      const url = s3KeyToUrl(key)
+      const url = resolveImageUrl(key)
       const editor = quillRef.current?.getEditor()
       if (editor) {
         const range = editor.getSelection(true)
