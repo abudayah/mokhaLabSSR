@@ -1,65 +1,143 @@
-body {
-    margin: 0;
-    background: linear-gradient(180deg, rgb(117, 81, 194), rgb(255, 255, 255));
-    display: flex;
-    font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-    height: 100vh;
-    width: 100vw;
-    justify-content: center;
-    align-items: center;
-  }
-  
-  main {
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-  }
-  
-  button {
-    border-radius: 8px;
-    border: 1px solid transparent;
-    padding: 0.6em 1.2em;
-    font-size: 1em;
-    font-weight: 500;
-    font-family: inherit;
-    background-color: #1a1a1a;
-    cursor: pointer;
-    transition: border-color 0.25s;
-    color: white;
-  }
-  button:hover {
-    border-color: #646cff;
-  }
-  button:focus,
-  button:focus-visible {
-    outline: 4px auto -webkit-focus-ring-color;
-  }
-  
-  ul {
-    padding-inline-start: 0;
-    margin-block-start: 0;
-    margin-block-end: 0;
-    list-style-type: none;
-    display: flex;
-    flex-direction: column;
-    margin: 8px 0;
-    border: 1px solid black;
-    gap: 1px;
-    background-color: black;
-    border-radius: 8px;
-    overflow: auto;
-  }
-  
-  li {
-    background-color: white;
-    padding: 8px;
-  }
-  
-  li:hover {
-    background: #dadbf9;
-  }
-  
-  a {
-    font-weight: 800;
-    text-decoration: none;
-  }
+.blog-prose {
+  font-family: var(--blog-serif);
+  font-size: 1.125rem;  /* text-lg */
+  line-height: 2rem;    /* leading-8 */
+  color: #262626;       /* neutral-800 */
+}
+
+.blog-prose p {
+  margin-bottom: 1em;
+}
+
+.blog-prose h2 {
+font-family: var(--blog-serif);
+    font-size: 1.5em;
+    font-weight: 700;
+    margin-top: 2.5rem;
+    margin-bottom: 1rem;
+}
+
+.blog-prose h3 {
+  font-family: var(--font-sans);
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-top: 2em;
+  margin-bottom: 0.5em;
+}
+
+.blog-prose blockquote {
+    border-left: 6px solid #d3cdc9;
+    margin: 1.5em 3em 0;
+    padding: 0.5em 1.5rem;
+    font-style: italic;
+    color: #847c6f;
+    font-size: 1.5rem;         /* text-neutral-500 */
+}
+
+.blog-prose img {
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin: 2em 0 0.5em;
+}
+
+.blog-prose figcaption,
+.blog-prose .caption {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--muted-foreground);
+  text-align: center;
+  margin-bottom: 2em;
+}
+
+.blog-prose a {
+  color: var(--blog-accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.blog-prose ul,
+.blog-prose ol {
+  padding-left: 1.5em;
+  margin-bottom: 1.6em;
+}
+
+.blog-prose li {
+  margin-bottom: 0.4em;
+}
+
+.blog-prose hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 3em 0;
+}
+
+/* ── Quill editor — mirror blog-prose styles so WYSIWYG matches the public output ── */
+.ql-editor {
+  font-size: 1.125rem;
+  line-height: 2rem;
+  color: #262626;
+  font-family: var(--blog-serif);
+  padding: 1.5rem;
+}
+
+.ql-editor p {
+  margin-bottom: 1.5rem;
+}
+
+.ql-editor h2 {
+  font-family: var(--blog-serif);
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-top: 3rem;
+  margin-bottom: 1rem;
+}
+
+.ql-editor h3 {
+  font-family: var(--font-sans);
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-top: 2em;
+  margin-bottom: 0.5em;
+}
+
+.ql-editor blockquote {
+  border-left: 4px solid #d4d4d4;
+  margin: 2em 0;
+  padding-left: 1.5rem;
+  font-style: italic;
+  color: #737373;
+}
+
+.ql-editor a {
+  color: var(--blog-accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.ql-editor ul,
+.ql-editor ol {
+  padding-left: 1.5em;
+  margin-bottom: 1.6em;
+}
+
+.ql-editor li {
+  margin-bottom: 0.4em;
+}
+
+.ql-editor img {
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin: 2em 0 0.5em;
+}
+
+.blog-bg{
+  background-color: #f7f2ee;
+}
+.blog-bg .border-neutral-100 {
+  border-color: #ece6dc;
+}
+/* .suggestions-box {
+  background-color: oklch(98.7% 0.022 95.277);
+} */
