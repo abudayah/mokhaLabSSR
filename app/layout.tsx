@@ -12,15 +12,7 @@ export const metadata: Metadata = {
     template: "%s | mokhaLab",
   },
   description:
-    "Precision-engineered espresso tools for the serious barista. Tampers, distributors, WDT tools and more — crafted in Canada.",
-  openGraph: {
-    siteName: "mokhaLab",
-    locale: "en_CA",
-    type: "website",
-  },
-  twitter: {
-    card: "summary_large_image",
-  },
+    "Precision-engineered espresso tools for the serious barista. Tampers, distributors, WDT tools and more.",
   icons: {
     icon: [
       { url: "/favicon/favicon.ico", sizes: "48x48" },

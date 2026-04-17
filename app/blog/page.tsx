@@ -16,22 +16,23 @@ Amplify.configure(outputs, { ssr: true })
 export const metadata: Metadata = {
   title: "Blog",
   description:
-    "Explore stories about specialty coffee culture, espresso brewing rituals, and the craft philosophy behind every mokhaLab precision tool.",
+    "Stories about coffee culture, brewing rituals, and the philosophy behind mokhaLab tools.",
   openGraph: {
-    title: "The mokhaLab Blog — Coffee Culture & Craft Espresso Stories",
+    title: "Blog | mokhaLab",
     description:
-      "Explore stories about specialty coffee culture, espresso brewing rituals, and the craft philosophy behind every mokhaLab precision tool.",
+      "Stories about coffee culture, brewing rituals, and the philosophy behind mokhaLab tools.",
     url: `${SITE_URL}/blog/`,
     siteName: "mokhaLab",
     locale: "en_CA",
     type: "website",
-    // Next.js auto-serves /blog/opengraph-image from the route convention file
+    images: [{ url: `${SITE_URL}/images/hero.webp` }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "The mokhaLab Blog — Coffee Culture & Craft Espresso Stories",
+    title: "Blog | mokhaLab",
     description:
-      "Explore stories about specialty coffee culture, espresso brewing rituals, and the craft philosophy behind every mokhaLab precision tool.",
+      "Stories about coffee culture, brewing rituals, and the philosophy behind mokhaLab tools.",
+    images: [`${SITE_URL}/images/hero.webp`],
   },
   alternates: { canonical: `${SITE_URL}/blog/` },
 }
