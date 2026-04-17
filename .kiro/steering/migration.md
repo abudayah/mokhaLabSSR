@@ -20,7 +20,7 @@ Use this as the reference whenever migrating additional features from `mokhalab`
 | Site footer + contact form | ✅ Done |
 | Blog list page | ✅ Done |
 | Blog post page | ✅ Done |
-| Homepage | ⬜ Pending |
+| Homepage | ✅ Done |
 | Products list page | ⬜ Pending |
 | Product detail page | ⬜ Pending |
 
