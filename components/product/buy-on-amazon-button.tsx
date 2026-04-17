@@ -4,7 +4,7 @@ import { ShoppingBag } from "lucide-react"
 import { useCurrency } from "@/contexts/currency-context"
 
 interface BuyOnAmazonButtonProps {
-  urls: { us: string; ca: string }
+  urls: { us?: string; ca?: string }
   size?: "md" | "lg"
   align?: "start" | "center"
 }
@@ -13,14 +13,26 @@ export function BuyOnAmazonButton({ urls, size = "md", align = "start" }: BuyOnA
   const { currency } = useCurrency()
   const isCA = currency === "CAD"
 
-  const primaryUrl = isCA ? urls.ca : urls.us
-  const primaryLabel = isCA ? "Buy on Amazon.ca" : "Buy on Amazon.com"
-  const altUrl = isCA ? urls.us : urls.ca
-  const altLabel = isCA ? "Amazon.com" : "Amazon.ca"
+  // If the preferred regional URL is missing, fall back to whichever exists
+  const hasCA = Boolean(urls.ca)
+  const hasUS = Boolean(urls.us)
+
+  // Determine which URL to show as primary
+  const preferCA = isCA && hasCA
+  const primaryUrl = preferCA ? urls.ca! : urls.us!
+  const primaryLabel = preferCA ? "Buy on Amazon.ca" : "Buy on Amazon.com"
+
+  // Alt link only makes sense when both URLs exist
+  const showAlt = hasCA && hasUS
+  const altUrl = preferCA ? urls.us! : urls.ca!
+  const altLabel = preferCA ? "Amazon.com" : "Amazon.ca"
 
   const iconSize = size === "lg" ? 20 : 18
   const textSize = size === "lg" ? "text-[17px]" : "text-[16px]"
   const padding = size === "lg" ? "px-10 py-4 rounded-[14px]" : "px-8 py-4 rounded-[12px]"
+
+  // Nothing to render if no URLs at all
+  if (!primaryUrl) return null
 
   return (
     <div className={`flex flex-col gap-2 ${align === "center" ? "items-center" : "items-start"}`}>
@@ -33,17 +45,19 @@ export function BuyOnAmazonButton({ urls, size = "md", align = "start" }: BuyOnA
         <ShoppingBag size={iconSize} aria-hidden="true" />
         {primaryLabel}
       </a>
-      <p className="text-[12px] text-muted-foreground text-center">
-        Also available on{" "}
-        <a
-          href={altUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="underline underline-offset-2 hover:text-foreground transition-colors"
-        >
-          {altLabel}
-        </a>
-      </p>
+      {showAlt && (
+        <p className="text-[12px] text-muted-foreground text-center">
+          Also available on{" "}
+          <a
+            href={altUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline underline-offset-2 hover:text-foreground transition-colors"
+          >
+            {altLabel}
+          </a>
+        </p>
+      )}
     </div>
   )
 }

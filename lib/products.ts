@@ -10,7 +10,7 @@ export interface Product {
   image: string
   images: string[]
   amazonUrl?: string
-  amazonUrls?: { us: string; ca: string }
+  amazonUrls?: { us?: string; ca?: string }
   features: { icon: string; title: string; description: string }[]
   specs: { label: string; value: string }[]
   compatibleMachines: string[]
@@ -152,7 +152,7 @@ export const products: Product[] = [
     ],
     amazonUrls: {
       us: "https://www.amazon.com/dp/B0GW4B2P46",
-      ca: "https://www.amazon.ca/dp/B0GW4B2P46",
+      // ca: "https://www.amazon.ca/dp/B0GW4B2P46",
     },
     features: [
       { icon: "zap", title: "Gravity Adaptive Technology", description: "Self-leveling base automatically adjusts to your coffee dose — no manual height calibration needed." },
