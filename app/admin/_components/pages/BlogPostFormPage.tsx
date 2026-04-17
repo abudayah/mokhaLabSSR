@@ -16,8 +16,8 @@ import { blogPostSchema } from "@/app/admin/_components/schemas/blogPostSchema"
 import type { BlogPostFormData } from "@/app/admin/_components/schemas/blogPostSchema"
 import { useBlogPostStore } from "@/app/admin/_components/context/useBlogPostStore"
 import { useNotifications } from "@/app/admin/_components/context/NotificationContext"
-import RichTextEditor from "@/app/admin/_components/components/RichTextEditor"
-import ImageUploader from "@/app/admin/_components/components/ImageUploader"
+import RichTextEditor from "@/app/admin/_components/RichTextEditor"
+import ImageUploader from "@/app/admin/_components/ImageUploader"
 
 interface BlogPostFormPageProps {
   /** Present when editing an existing post */

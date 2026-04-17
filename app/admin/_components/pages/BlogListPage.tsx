@@ -11,7 +11,7 @@ import SpaceBetween from "@cloudscape-design/components/space-between"
 import ContentLayout from "@cloudscape-design/components/content-layout"
 import { useBlogPostStore } from "@/app/admin/_components/context/useBlogPostStore"
 import { useNotifications } from "@/app/admin/_components/context/NotificationContext"
-import DeleteConfirmModal from "@/app/admin/_components/components/DeleteConfirmModal"
+import DeleteConfirmModal from "@/app/admin/_components/DeleteConfirmModal"
 import type { BlogPost } from "@/lib/blog-posts"
 
 type SortField = "title" | "date"

@@ -58,6 +58,10 @@ app/admin/
     AmplifyProvider.tsx          # Configures Amplify with ssr: true
     AdminProviders.tsx           # BlogPostStoreProvider + NotificationProvider
     AdminLayout.tsx              # AppLayout + TopNavigation + SideNavigation + Flashbar
+    CharacterCount.tsx           # Character counter display
+    DeleteConfirmModal.tsx       # Cloudscape Modal for delete confirmation
+    ImageUploader.tsx            # S3 upload via Amplify Storage
+    RichTextEditor.tsx           # react-quill wrapper with error boundary fallback
     context/
       BlogPostStoreContext.tsx   # Amplify Data CRUD for BlogPost model
       NotificationContext.tsx    # Flashbar notification state
@@ -67,11 +71,6 @@ app/admin/
       DashboardPage.tsx
       BlogListPage.tsx
       BlogPostFormPage.tsx       # Handles both /new and /[id]/edit
-    components/
-      RichTextEditor.tsx         # react-quill wrapper with error boundary fallback
-      DeleteConfirmModal.tsx     # Cloudscape Modal for delete confirmation
-      ImageUploader.tsx          # S3 upload via Amplify Storage
-      CharacterCount.tsx         # Character counter display
     schemas/
       blogPostSchema.ts          # Zod schema for blog post form
     types/
