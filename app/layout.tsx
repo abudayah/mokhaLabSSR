@@ -15,15 +15,15 @@ export const metadata: Metadata = {
     "Precision-engineered espresso tools for the serious barista. Tampers, distributors, WDT tools and more.",
   icons: {
     icon: [
+      { url: "/favicon/favicon.ico", sizes: "48x48" },
       { url: "/favicon/favicon-96x96.png", sizes: "96x96", type: "image/png" },
       { url: "/favicon/favicon.svg", type: "image/svg+xml" },
-      { url: "/favicon/favicon.ico", rel: "shortcut icon" },
     ],
     apple: { url: "/favicon/apple-touch-icon.png", sizes: "180x180" },
   },
   manifest: "/favicon/site.webmanifest",
-  other: {
-    "apple-mobile-web-app-title": "mokhaLab",
+  appleWebApp: {
+    title: "mokhaLab",
   },
 }
 
@@ -33,6 +33,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        {/* Theme color for browser chrome */}
+        <meta name="theme-color" content="#ffffff" />
         {/* Preload hero image for LCP */}
         <link rel="preload" as="image" href="/images/hero.webp" fetchPriority="high" />
         {/* Preconnect to Amazon CDN */}
