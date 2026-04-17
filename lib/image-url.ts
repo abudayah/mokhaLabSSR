@@ -27,3 +27,30 @@ export function resolveImageUrl(src: string, fallback = ""): string {
   // S3 key — no leading slash or protocol
   return `https://${BUCKET}.s3.${REGION}.amazonaws.com/${src}`
 }
+
+/**
+ * Derives the OG image URL from a display image key/URL by convention.
+ *
+ * The uploader always writes two variants to S3:
+ *   blog-images/1234-photo.webp      ← display image (stored in featuredImage)
+ *   blog-images/1234-photo-og.webp   ← OG image (1200×630, derived by this fn)
+ *
+ * Falls back to the branded static OG image for posts that predate this
+ * convention (i.e. uploaded before the dual-variant uploader was in place).
+ */
+export function resolveOgImageUrl(src: string): string {
+  const fallback = `${SITE_URL}/images/og-blog.jpg`
+  if (!src) return fallback
+
+  // Already an absolute URL — insert -og before the extension
+  if (src.startsWith("http")) {
+    return src.replace(/(\.[^./?#]+)(\?.*)?$/, "-og$1$2")
+  }
+
+  // Relative public path e.g. "/images/hero.webp" — no OG variant exists, use fallback
+  if (src.startsWith("/")) return fallback
+
+  // S3 key — derive the -og key and resolve it
+  const ogKey = src.replace(/(\.[^.]+)$/, "-og$1")
+  return resolveImageUrl(ogKey, fallback)
+}

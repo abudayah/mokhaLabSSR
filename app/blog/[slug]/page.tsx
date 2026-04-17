@@ -6,7 +6,7 @@ import Link from "next/link"
 import type { Schema } from "@/amplify/data/resource"
 import type { BlogPost } from "@/lib/blog-posts"
 import { estimateReadTime } from "@/lib/blog-posts"
-import { resolveImageUrl, SITE_URL } from "@/lib/image-url"
+import { resolveImageUrl, resolveOgImageUrl, SITE_URL } from "@/lib/image-url"
 import outputs from "@/amplify_outputs.json"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
@@ -64,8 +64,8 @@ export async function generateMetadata({
   const title = `${post.title} | mokhaLab`
   const description = post.subtitle ?? post.title
   const ogImage = post.featuredImage
-    ? resolveImageUrl(post.featuredImage, DEFAULT_IMAGE)
-    : DEFAULT_IMAGE
+    ? resolveOgImageUrl(post.featuredImage)
+    : `${SITE_URL}/images/og-blog.jpg`
   const url = `${SITE_URL}/blog/${post.slug}/`
 
   return {
@@ -81,7 +81,7 @@ export async function generateMetadata({
       type: "article",
       publishedTime: post.date,
       authors: [post.author],
-      images: [{ url: ogImage }],
+      images: [{ url: ogImage, width: 1200, height: 630, alt: post.title }],
     },
     twitter: {
       card: "summary_large_image",

@@ -9,10 +9,88 @@ import ProgressBar from "@cloudscape-design/components/progress-bar"
 import { S3Image } from "@/components/S3Image"
 
 interface ImageUploaderProps {
-  /** S3 path key, e.g. "blog-images/1234-photo.jpg" */
+  /** S3 path key, e.g. "blog-images/1234-photo.webp" */
   value: string | undefined
   onChange: (key: string) => void
   error?: string
+}
+
+// Display image: max 1200px wide, preserving aspect ratio
+const DISPLAY_MAX_WIDTH = 1200
+const DISPLAY_MAX_HEIGHT = 1200
+
+// OG image: exactly 1200×630, center-cropped
+const OG_WIDTH = 1200
+const OG_HEIGHT = 630
+
+const WEBP_QUALITY = 0.88
+
+/**
+ * Draws a source image onto a canvas at the given dimensions using
+ * center-crop (cover) behaviour, then returns a WebP Blob.
+ */
+function canvasToWebpBlob(
+  img: HTMLImageElement,
+  targetW: number,
+  targetH: number
+): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const canvas = document.createElement("canvas")
+    canvas.width = targetW
+    canvas.height = targetH
+    const ctx = canvas.getContext("2d")
+    if (!ctx) return reject(new Error("Canvas 2D context unavailable"))
+
+    // Cover: scale so the image fills the target, then center-crop
+    const scale = Math.max(targetW / img.naturalWidth, targetH / img.naturalHeight)
+    const scaledW = img.naturalWidth * scale
+    const scaledH = img.naturalHeight * scale
+    const offsetX = (targetW - scaledW) / 2
+    const offsetY = (targetH - scaledH) / 2
+
+    ctx.drawImage(img, offsetX, offsetY, scaledW, scaledH)
+    canvas.toBlob(
+      (blob) => {
+        if (blob) resolve(blob)
+        else reject(new Error("canvas.toBlob returned null"))
+      },
+      "image/webp",
+      WEBP_QUALITY
+    )
+  })
+}
+
+/**
+ * Loads a File into an HTMLImageElement and returns both the element
+ * and a local object URL (caller is responsible for revoking it).
+ */
+function loadImage(file: File): Promise<{ img: HTMLImageElement; objectUrl: string }> {
+  return new Promise((resolve, reject) => {
+    const objectUrl = URL.createObjectURL(file)
+    const img = new Image()
+    img.onload = () => resolve({ img, objectUrl })
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl)
+      reject(new Error("Failed to load image"))
+    }
+    img.src = objectUrl
+  })
+}
+
+/**
+ * Computes display dimensions: scale down proportionally so neither
+ * dimension exceeds the max, but never upscale.
+ */
+function displayDimensions(
+  naturalW: number,
+  naturalH: number
+): { w: number; h: number } {
+  const scale = Math.min(
+    1,
+    DISPLAY_MAX_WIDTH / naturalW,
+    DISPLAY_MAX_HEIGHT / naturalH
+  )
+  return { w: Math.round(naturalW * scale), h: Math.round(naturalH * scale) }
 }
 
 export default function ImageUploader({ value, onChange, error }: ImageUploaderProps) {
@@ -22,7 +100,7 @@ export default function ImageUploader({ value, onChange, error }: ImageUploaderP
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
 
-  // Revoke blob URL when it changes or component unmounts to prevent memory leaks
+  // Revoke blob URL on change or unmount to prevent memory leaks
   useEffect(() => {
     return () => {
       if (previewUrl) URL.revokeObjectURL(previewUrl)
@@ -38,8 +116,8 @@ export default function ImageUploader({ value, onChange, error }: ImageUploaderP
       return
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      setUploadError("Image must be 5MB or smaller.")
+    if (file.size > 10 * 1024 * 1024) {
+      setUploadError("Image must be 10 MB or smaller.")
       return
     }
 
@@ -47,28 +125,68 @@ export default function ImageUploader({ value, onChange, error }: ImageUploaderP
     setUploading(true)
     setProgress(0)
 
-    // Show a local preview immediately while uploading
-    if (previewUrl) URL.revokeObjectURL(previewUrl)
-    const localPreview = URL.createObjectURL(file)
-    setPreviewUrl(localPreview)
-
     try {
-      const key = `blog-images/${Date.now()}-${file.name.replace(/[^a-z0-9.-]/gi, "-").toLowerCase()}`
+      // ── 1. Load the image ──────────────────────────────────────────────
+      const { img, objectUrl } = await loadImage(file)
 
-      await uploadData({
-        path: key,
-        data: file,
-        options: {
-          contentType: file.type,
-          onProgress: ({ transferredBytes, totalBytes }) => {
-            if (totalBytes) {
-              setProgress(Math.round((transferredBytes / totalBytes) * 100))
-            }
+      // Show local preview immediately
+      if (previewUrl) URL.revokeObjectURL(previewUrl)
+      setPreviewUrl(objectUrl)
+
+      // ── 2. Produce two WebP blobs via Canvas ───────────────────────────
+      const { w: dispW, h: dispH } = displayDimensions(img.naturalWidth, img.naturalHeight)
+
+      const [displayBlob, ogBlob] = await Promise.all([
+        canvasToWebpBlob(img, dispW, dispH),
+        canvasToWebpBlob(img, OG_WIDTH, OG_HEIGHT),
+      ])
+
+      // ── 3. Build S3 keys ───────────────────────────────────────────────
+      const baseName = `${Date.now()}-${file.name
+        .replace(/\.[^.]+$/, "")                  // strip original extension
+        .replace(/[^a-z0-9]/gi, "-")
+        .toLowerCase()}`
+
+      const displayKey = `blog-images/${baseName}.webp`
+      const ogKey      = `blog-images/${baseName}-og.webp`
+
+      // ── 4. Upload both in parallel, tracking combined progress ─────────
+      let displayBytes = 0
+      let ogBytes = 0
+      const totalBytes = displayBlob.size + ogBlob.size
+
+      const updateProgress = () => {
+        setProgress(Math.round(((displayBytes + ogBytes) / totalBytes) * 100))
+      }
+
+      await Promise.all([
+        uploadData({
+          path: displayKey,
+          data: displayBlob,
+          options: {
+            contentType: "image/webp",
+            onProgress: ({ transferredBytes }) => {
+              displayBytes = transferredBytes
+              updateProgress()
+            },
           },
-        },
-      }).result
+        }).result,
+        uploadData({
+          path: ogKey,
+          data: ogBlob,
+          options: {
+            contentType: "image/webp",
+            onProgress: ({ transferredBytes }) => {
+              ogBytes = transferredBytes
+              updateProgress()
+            },
+          },
+        }).result,
+      ])
 
-      onChange(key)
+      // ── 5. Only the display key is stored in the DB ────────────────────
+      // The OG key is always derived by convention: baseName-og.webp
+      onChange(displayKey)
     } catch (err) {
       setUploadError("Upload failed. Please try again.")
       setPreviewUrl(null)
@@ -118,7 +236,7 @@ export default function ImageUploader({ value, onChange, error }: ImageUploaderP
       {uploading && (
         <ProgressBar
           value={progress}
-          label="Uploading image"
+          label="Uploading image variants"
           description={`${progress}%`}
         />
       )}
