@@ -4,8 +4,12 @@ const storage = (outputs as { storage?: { bucket_name?: string; aws_region?: str
 const BUCKET = storage?.bucket_name ?? ""
 const REGION = storage?.aws_region ?? "us-west-2"
 
-/** Canonical public domain for the site. */
-export const SITE_URL = "https://www.mokhalab.ca"
+/**
+ * Canonical public domain for the site.
+ * Set NEXT_PUBLIC_SITE_URL in your environment to override (e.g. for staging).
+ */
+export const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ?? "https://www.mokhalab.ca"
 
 /**
  * Resolves any image reference to a fully-qualified public URL.

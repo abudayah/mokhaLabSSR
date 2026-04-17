@@ -19,6 +19,9 @@ import { fileURLToPath } from "url"
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const publicDir = path.resolve(__dirname, "../public")
 
+// Respect the same env var used by the Next.js app
+const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.mokhalab.ca").replace(/\/$/, "")
+
 // ── Inline product image map (mirrors lib/products.ts) ──────────────────────
 // Keeping this separate avoids needing ts-node / tsx just for a build script.
 const productImages = [

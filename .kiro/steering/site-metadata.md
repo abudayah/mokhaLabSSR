@@ -73,3 +73,18 @@ Example entry for a new product:
   <priority>0.8</priority>
 </url>
 ```
+
+---
+
+## Base URL (`NEXT_PUBLIC_SITE_URL`)
+
+The canonical site URL is controlled by the `NEXT_PUBLIC_SITE_URL` environment variable. It is used in OG tags, canonical links, JSON-LD, and the OG image generation script.
+
+**Where to set it:**
+- **Amplify Console** → App settings → Environment variables → add `NEXT_PUBLIC_SITE_URL` = `https://www.mokhalab.ca`
+  This is injected at build time and applies to all `next build` runs on that Amplify app.
+- **Local development** → copy `.env.example` to `.env.local` and set the value there.
+
+**Default fallback:** `https://www.mokhalab.ca` (hardcoded in `lib/image-url.ts` as a safety net only — always prefer the env var).
+
+**Do not** hardcode the domain anywhere else in the codebase. Always import `SITE_URL` from `@/lib/image-url`.
