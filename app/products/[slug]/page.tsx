@@ -157,7 +157,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
                 )}
 
                 <div className="flex flex-col gap-3 pt-2">
-                  <BuyOnAmazonButton urls={amazonUrls} />
+                  <BuyOnAmazonButton urls={amazonUrls} productName={product.name} />
                   <ShareButton title={product.name} text={product.tagline} />
                 </div>
 
@@ -272,7 +272,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
               <p className="text-[17px] text-muted-foreground leading-relaxed mb-10 text-balance">
                 {product.tagline}
               </p>
-              <BuyOnAmazonButton urls={amazonUrls} size="lg" align="center" />
+              <BuyOnAmazonButton urls={amazonUrls} productName={product.name} size="lg" align="center" />
             </div>
           </section>
         </main>
