@@ -3,44 +3,44 @@
 
   <!-- Static pages -->
   <url>
-    <loc>https://www.mokhalab.ca/</loc>
+    <loc>https://www.mokhalab.com/</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://www.mokhalab.ca/products</loc>
+    <loc>https://www.mokhalab.com/products</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
 
   <!-- Product pages -->
   <url>
-    <loc>https://www.mokhalab.ca/products/precision-impact-tamper-53mm</loc>
+    <loc>https://www.mokhalab.com/products/precision-impact-tamper-53mm</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://www.mokhalab.ca/products/precision-impact-tamper-58mm</loc>
+    <loc>https://www.mokhalab.com/products/precision-impact-tamper-58mm</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://www.mokhalab.ca/products/espresso-wdt-distribution-tool</loc>
+    <loc>https://www.mokhalab.com/products/espresso-wdt-distribution-tool</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://www.mokhalab.ca/products/gravity-adaptive-distributor</loc>
+    <loc>https://www.mokhalab.com/products/gravity-adaptive-distributor</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://www.mokhalab.ca/products/tamper-station</loc>
+    <loc>https://www.mokhalab.com/products/tamper-station</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://www.mokhalab.ca/products/barista-towels-2-pack</loc>
+    <loc>https://www.mokhalab.com/products/barista-towels-2-pack</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>

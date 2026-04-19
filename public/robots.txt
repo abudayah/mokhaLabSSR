@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://www.mokhalab.ca/sitemap.xml
+Sitemap: https://www.mokhalab.com/sitemap.xml

@@ -12,12 +12,12 @@ export const metadata: Metadata = {
     title: "Products | mokhaLab",
     description:
       "Shop mokhaLab precision espresso tools — tampers, distributors, WDT tools, and more.",
-    url: "https://www.mokhalab.ca/products",
+    url: "https://www.mokhalab.com/products",
     siteName: "mokhaLab",
     locale: "en_CA",
     type: "website",
   },
-  alternates: { canonical: "https://www.mokhalab.ca/products" },
+  alternates: { canonical: "https://www.mokhalab.com/products" },
 }
 
 export default function ProductsListPage() {

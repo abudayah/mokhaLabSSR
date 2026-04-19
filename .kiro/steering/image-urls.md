@@ -38,13 +38,13 @@ Resolves any image reference to a fully-qualified public URL:
 | Input | Output |
 |-------|--------|
 | `"blog-images/photo.webp"` | `https://<bucket>.s3.us-west-2.amazonaws.com/blog-images/photo.webp` |
-| `"/images/hero.webp"` | `https://www.mokhalab.ca/images/hero.webp` |
+| `"/images/hero.webp"` | `https://www.mokhalab.com/images/hero.webp` |
 | `"https://example.com/img.jpg"` | `https://example.com/img.jpg` (unchanged) |
 | `""` or `undefined` | `fallback` (defaults to `""`) |
 
 ### `SITE_URL`
 
-The canonical site domain: `"https://www.mokhalab.ca"`. Use this instead of hardcoding the domain.
+The canonical site domain: `"https://www.mokhalab.com"`. Use this instead of hardcoding the domain.
 
 ---
 
@@ -78,7 +78,7 @@ const ogImage = resolveImageUrl(post.featuredImage, DEFAULT_OG_IMAGE)
 const url = `https://amplify-mokhalab-...s3.us-west-2.amazonaws.com/${key}`
 
 // ❌ Hardcoding the domain
-const url = `https://www.mokhalab.ca${relativePath}`
+const url = `https://www.mokhalab.com${relativePath}`
 
 // ❌ Duplicating the resolution logic in a new file
 function myResolve(src: string) { ... }

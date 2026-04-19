@@ -32,16 +32,16 @@ Current structure to maintain:
 [brand philosophy paragraph]
 
 ## Products
-- [Products](https://www.mokhalab.ca/products): ...
+- [Products](https://www.mokhalab.com/products): ...
 
 ## Blog
-- [Blog](https://www.mokhalab.ca/blog): ...
+- [Blog](https://www.mokhalab.com/blog): ...
 
 ## Contact
-- [Contact](https://www.mokhalab.ca/#contact): ...
+- [Contact](https://www.mokhalab.com/#contact): ...
 
 ## Optional
-- [Sitemap](https://www.mokhalab.ca/sitemap.xml): ...
+- [Sitemap](https://www.mokhalab.com/sitemap.xml): ...
 ```
 
 ---
@@ -62,13 +62,13 @@ Location: `public/sitemap.xml`
 - Static pages use `<changefreq>weekly</changefreq>`
 - Product pages use `<changefreq>monthly</changefreq>` and `<priority>0.8</priority>`
 - Blog posts are dynamic (fetched from DynamoDB at runtime) — do **not** add individual post URLs manually
-- Always use the canonical domain `https://www.mokhalab.ca`
+- Always use the canonical domain `https://www.mokhalab.com`
 - Product URLs follow the pattern `/products/[MODEL-NUMBER]` matching the product `id` in `src/lib/products.ts`
 
 Example entry for a new product:
 ```xml
 <url>
-  <loc>https://www.mokhalab.ca/products/ML-NEW-01</loc>
+  <loc>https://www.mokhalab.com/products/ML-NEW-01</loc>
   <changefreq>monthly</changefreq>
   <priority>0.8</priority>
 </url>
@@ -81,10 +81,10 @@ Example entry for a new product:
 The canonical site URL is controlled by the `NEXT_PUBLIC_SITE_URL` environment variable. It is used in OG tags, canonical links, JSON-LD, and the OG image generation script.
 
 **Where to set it:**
-- **Amplify Console** → App settings → Environment variables → add `NEXT_PUBLIC_SITE_URL` = `https://www.mokhalab.ca`
+- **Amplify Console** → App settings → Environment variables → add `NEXT_PUBLIC_SITE_URL` = `https://www.mokhalab.com`
   This is injected at build time and applies to all `next build` runs on that Amplify app.
 - **Local development** → copy `.env.example` to `.env.local` and set the value there.
 
-**Default fallback:** `https://www.mokhalab.ca` (hardcoded in `lib/image-url.ts` as a safety net only — always prefer the env var).
+**Default fallback:** `https://www.mokhalab.com` (hardcoded in `lib/image-url.ts` as a safety net only — always prefer the env var).
 
 **Do not** hardcode the domain anywhere else in the codebase. Always import `SITE_URL` from `@/lib/image-url`.

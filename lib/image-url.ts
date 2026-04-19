@@ -9,7 +9,7 @@ const REGION = storage?.aws_region ?? "us-west-2"
  * Set NEXT_PUBLIC_SITE_URL in your environment to override (e.g. for staging).
  */
 export const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ?? "https://www.mokhalab.ca"
+  process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ?? "https://www.mokhalab.com"
 
 /**
  * Resolves any image reference to a fully-qualified public URL.
