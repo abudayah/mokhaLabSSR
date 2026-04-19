@@ -107,11 +107,11 @@ describe("BuyOnAmazonButton", () => {
   // ── GA4 tracking ────────────────────────────────────────────────────────────
 
   describe("GA4 tracking", () => {
-    it("fires begin_checkout with correct params when primary button is clicked", async () => {
+    it("fires add_to_cart with correct params when primary button is clicked", async () => {
       renderWithCurrency("USD")
       await userEvent.click(screen.getByRole("link", { name: /buy on amazon\.com/i }))
 
-      expect(window.gtag).toHaveBeenCalledWith("event", "begin_checkout", {
+      expect(window.gtag).toHaveBeenCalledWith("event", "add_to_cart", {
         event_category: "ecommerce",
         event_label: "Espresso WDT Tool",
         store: "us",
@@ -119,11 +119,11 @@ describe("BuyOnAmazonButton", () => {
       })
     })
 
-    it("fires begin_checkout with store=ca when CAD primary is clicked", async () => {
+    it("fires add_to_cart with store=ca when CAD primary is clicked", async () => {
       renderWithCurrency("CAD")
       await userEvent.click(screen.getByRole("link", { name: /buy on amazon\.ca/i }))
 
-      expect(window.gtag).toHaveBeenCalledWith("event", "begin_checkout", {
+      expect(window.gtag).toHaveBeenCalledWith("event", "add_to_cart", {
         event_category: "ecommerce",
         event_label: "Espresso WDT Tool",
         store: "ca",
@@ -131,11 +131,11 @@ describe("BuyOnAmazonButton", () => {
       })
     })
 
-    it("fires begin_checkout when the alt store link is clicked", async () => {
+    it("fires add_to_cart when the alt store link is clicked", async () => {
       renderWithCurrency("USD")
       await userEvent.click(screen.getByRole("link", { name: /amazon\.ca/i }))
 
-      expect(window.gtag).toHaveBeenCalledWith("event", "begin_checkout", {
+      expect(window.gtag).toHaveBeenCalledWith("event", "add_to_cart", {
         event_category: "ecommerce",
         event_label: "Espresso WDT Tool",
         store: "ca",
@@ -148,7 +148,7 @@ describe("BuyOnAmazonButton", () => {
       render(<BuyOnAmazonButton urls={{ us: US_URL, ca: CA_URL }} />)
       await userEvent.click(screen.getByRole("link", { name: /buy on amazon\.com/i }))
 
-      expect(window.gtag).toHaveBeenCalledWith("event", "begin_checkout",
+      expect(window.gtag).toHaveBeenCalledWith("event", "add_to_cart",
         expect.objectContaining({ event_label: "Buy on Amazon.com" })
       )
     })

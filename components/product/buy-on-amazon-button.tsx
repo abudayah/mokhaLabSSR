@@ -14,7 +14,7 @@ function trackBuyClick(label: string, url: string, store: "us" | "ca") {
   try {
     // GA4 custom event — "begin_checkout" is a standard recommended ecommerce event.
     // It will appear under Events in GA4 and can be marked as a Key Event in Admin.
-    window.gtag?.("event", "begin_checkout", {
+    window.gtag?.("event", "add_to_cart", {
       event_category: "ecommerce",
       event_label: label,
       store,
