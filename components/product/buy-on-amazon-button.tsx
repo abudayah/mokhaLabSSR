@@ -5,11 +5,27 @@ import { useCurrency } from "@/contexts/currency-context"
 
 interface BuyOnAmazonButtonProps {
   urls: { us?: string; ca?: string }
+  productName?: string
   size?: "md" | "lg"
   align?: "start" | "center"
 }
 
-export function BuyOnAmazonButton({ urls, size = "md", align = "start" }: BuyOnAmazonButtonProps) {
+function trackBuyClick(label: string, url: string, store: "us" | "ca") {
+  try {
+    // GA4 custom event — "begin_checkout" is a standard recommended ecommerce event.
+    // It will appear under Events in GA4 and can be marked as a Key Event in Admin.
+    window.gtag?.("event", "add_to_cart", {
+      event_category: "ecommerce",
+      event_label: label,
+      store,
+      outbound_url: url,
+    })
+  } catch {
+    // gtag not available (e.g. consent denied, ad blocker) — fail silently
+  }
+}
+
+export function BuyOnAmazonButton({ urls, productName, size = "md", align = "start" }: BuyOnAmazonButtonProps) {
   const { currency } = useCurrency()
   const isCA = currency === "CAD"
 
@@ -40,6 +56,7 @@ export function BuyOnAmazonButton({ urls, size = "md", align = "start" }: BuyOnA
         href={primaryUrl}
         target="_blank"
         rel="noopener noreferrer"
+        onClick={() => trackBuyClick(productName ?? primaryLabel, primaryUrl, preferCA ? "ca" : "us")}
         className={`inline-flex items-center justify-center gap-2 bg-[#00A8E1] text-white font-semibold hover:opacity-90 active:opacity-80 transition-opacity ${textSize} ${padding}`}
       >
         <ShoppingBag size={iconSize} aria-hidden="true" />
@@ -52,6 +69,7 @@ export function BuyOnAmazonButton({ urls, size = "md", align = "start" }: BuyOnA
             href={altUrl}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => trackBuyClick(productName ?? altLabel, altUrl, preferCA ? "us" : "ca")}
             className="underline underline-offset-2 hover:text-foreground transition-colors"
           >
             {altLabel}
