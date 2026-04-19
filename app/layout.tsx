@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import Script from "next/script"
+import { ConsentBanner } from "@/components/consent-banner"
 import "./globals.css"
 import "./app.css"
 
@@ -27,7 +28,7 @@ export const metadata: Metadata = {
   },
 }
 
-const GTM_ID = "GTM-56PPS67N"
+const GA_ID = "G-KB8P76B3Q1"
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -42,24 +43,46 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://www.amazon.ca" />
       </head>
       <body className={inter.variable}>
-        {/* Google Tag Manager */}
-        <Script id="gtm" strategy="afterInteractive">
-          {`(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-})(window,document,'script','dataLayer','${GTM_ID}');`}
+        {/*
+         * Consent Mode v2 — default state (denied).
+         * Must run BEFORE GA so Google tags start in denied mode.
+         * The ConsentBanner component updates these values via dataLayer
+         * once the user makes a choice.
+         */}
+        <Script id="consent-default" strategy="beforeInteractive">
+          {`
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('consent', 'default', {
+  analytics_storage: 'denied',
+  ad_storage: 'denied',
+  ad_user_data: 'denied',
+  ad_personalization: 'denied',
+  wait_for_update: 500
+});
+gtag('set', 'ads_data_redaction', true);
+gtag('set', 'url_passthrough', true);
+          `}
         </Script>
-        {/* GTM noscript */}
-        <noscript>
-          <iframe
-            src={`https://www.googletagmanager.com/ns.html?id=${GTM_ID}`}
-            height="0"
-            width="0"
-            style={{ display: "none", visibility: "hidden" }}
-          />
-        </noscript>
+
+        {/* Google Analytics (gtag.js) */}
+        <Script
+          src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
+          strategy="afterInteractive"
+        />
+        <Script id="ga-init" strategy="afterInteractive">
+          {`
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', '${GA_ID}');
+          `}
+        </Script>
+
         {children}
+
+        {/* Consent banner — renders client-side, hidden once user has chosen */}
+        <ConsentBanner />
       </body>
     </html>
   )
