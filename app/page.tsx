@@ -39,24 +39,14 @@ export default function HomePage() {
         {/* ── Hero ─────────────────────────────────────────── */}
         <section className="pt-14 relative overflow-hidden">
           <div className="relative w-full aspect-[16/9] md:aspect-[21/9] max-h-[680px]">
-            <video
-              src="/images/hero.mp4"
-              autoPlay
-              loop
-              muted
-              playsInline
-              poster="/images/hero.webp"
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/images/hero.webp"
+              alt="A barista tamping espresso grounds with a mokhaLab Precision Tamper"
               className="w-full h-full object-cover object-center"
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/images/hero.webp"
-                alt="A barista tamping espresso grounds with a mokhaLab Precision Tamper"
-                className="w-full h-full object-cover object-center"
-              />
-            </video>
+            />
             {/* Overlay */}
-            <div className="absolute inset-0 bg-black/30" />
+            <div className="absolute inset-0 bg-black/10" />
 
             {/* Hero Text */}
             <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6">

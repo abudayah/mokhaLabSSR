@@ -136,6 +136,19 @@ Environment variables available in build: `AWS_BRANCH`, `AWS_APP_ID`
 
 ---
 
+## Dependency Management
+
+**All dependencies must be installed in the root `package.json` only.**
+
+- `amplify/package.json` exists for documentation purposes — it lists what the backend functions need, but is never used for installation
+- Never run `npm install` inside the `amplify/` folder
+- Never add packages to `amplify/package.json` as a way to install them
+- The Amplify build runs `npm ci` at the root only — anything not in the root lockfile will not be available at build time
+
+When adding a new dependency needed by an Amplify function (e.g. an AWS SDK client), add it to the **root** `package.json` and run `npm install` from the project root.
+
+---
+
 ## Things to Do Before Production
 
 - [ ] Replace public API key authorization with `allow.authenticated()` or owner-based rules in `amplify/data/resource.ts`
