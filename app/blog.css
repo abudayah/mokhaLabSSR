@@ -1,0 +1,145 @@
+/* ── Blog-specific styles ─────────────────────────────────────────────────── */
+
+/* Page background */
+.blog-bg {
+  background-color: #f7f2ee;
+}
+.blog-bg .border-neutral-100 {
+  border-color: #ece6dc;
+}
+
+/* ── Prose customisation ──────────────────────────────────────────────────── */
+/*
+ * We use @tailwindcss/typography for post body content.
+ * The .prose class is applied to the dangerouslySetInnerHTML wrapper in
+ * app/blog/[slug]/page.tsx.
+ *
+ * Overrides below tune the default prose theme to match the mokhaLab
+ * aesthetic: Lora serif body, warm neutral palette, blog-accent links.
+ */
+
+.blog-prose {
+  /* Typography plugin base — picks up all prose defaults */
+  --tw-prose-body:        #262626;
+  --tw-prose-headings:    #1a1a1a;
+  --tw-prose-lead:        #525252;
+  --tw-prose-links:       var(--blog-accent);
+  --tw-prose-bold:        #1a1a1a;
+  --tw-prose-counters:    #737373;
+  --tw-prose-bullets:     #a8a29e;
+  --tw-prose-hr:          #e7e0d8;
+  --tw-prose-quotes:      #847c6f;
+  --tw-prose-quote-borders: #d3cdc9;
+  --tw-prose-captions:    #737373;
+  --tw-prose-code:        #1a1a1a;
+  --tw-prose-pre-code:    #e5e7eb;
+  --tw-prose-pre-bg:      #1f2937;
+  --tw-prose-th-borders:  #d1d5db;
+  --tw-prose-td-borders:  #e5e7eb;
+
+  /* Serif body font */
+  font-family: var(--blog-serif);
+  font-size: 1.125rem;   /* text-lg */
+  line-height: 2rem;
+}
+
+/* Headings use the serif font */
+.blog-prose :where(h1, h2, h3, h4) {
+  font-family: var(--blog-serif);
+}
+
+/* h3 and below switch to sans */
+.blog-prose :where(h3, h4) {
+  font-family: var(--font-sans);
+}
+
+/* Links — underline offset to match brand style */
+.blog-prose :where(a) {
+  color: var(--blog-accent);
+  text-decoration-line: underline;
+  text-underline-offset: 3px;
+}
+
+/* Blockquote — warm left border, italic, larger */
+.blog-prose :where(blockquote) {
+  border-left-width: 6px;
+  border-left-color: #d3cdc9;
+  margin-left: 1.5em;
+  font-style: italic;
+  color: #847c6f;
+  font-size: 1.25rem;
+}
+
+/* Images */
+.blog-prose :where(img) {
+  border-radius: 8px;
+}
+
+/* Figcaption / caption helper */
+.blog-prose :where(figcaption),
+.blog-prose :where(.caption) {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--muted-foreground);
+  text-align: center;
+}
+
+/* ── Quill editor — mirrors blog-prose so WYSIWYG matches public output ───── */
+.ql-editor {
+  font-size: 1.125rem;
+  line-height: 2rem;
+  color: #262626;
+  font-family: var(--blog-serif);
+  padding: 1.5rem;
+}
+
+.ql-editor p {
+  margin-bottom: 1.5rem;
+}
+
+.ql-editor h2 {
+  font-family: var(--blog-serif);
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-top: 3rem;
+  margin-bottom: 1rem;
+}
+
+.ql-editor h3 {
+  font-family: var(--font-sans);
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-top: 2em;
+  margin-bottom: 0.5em;
+}
+
+.ql-editor blockquote {
+  border-left: 4px solid #d4d4d4;
+  margin: 2em 0;
+  padding-left: 1.5rem;
+  font-style: italic;
+  color: #737373;
+}
+
+.ql-editor a {
+  color: var(--blog-accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.ql-editor ul,
+.ql-editor ol {
+  padding-left: 1.5em;
+  margin-bottom: 1.6em;
+}
+
+.ql-editor li {
+  margin-bottom: 0.4em;
+}
+
+.ql-editor img {
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin: 2em 0 0.5em;
+}

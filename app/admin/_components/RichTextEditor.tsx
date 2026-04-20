@@ -14,8 +14,6 @@ interface RichTextEditorProps {
   readOnly?: boolean
 }
 
-
-
 const TOOLBAR_OPTIONS = [
   [{ header: [2, 3, false] }],
   ["bold", "italic", "blockquote"],

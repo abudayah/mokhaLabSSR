@@ -182,7 +182,7 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
               )}
 
               <div
-                className="blog-prose"
+                className="blog-prose prose prose-lg max-w-none"
                 dangerouslySetInnerHTML={{ __html: bodyHtml }}
               />
             </article>

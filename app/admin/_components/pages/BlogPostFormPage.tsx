@@ -19,6 +19,19 @@ import { useNotifications } from "@/app/admin/_components/context/NotificationCo
 import RichTextEditor from "@/app/admin/_components/RichTextEditor"
 import ImageUploader from "@/app/admin/_components/ImageUploader"
 
+const cleanHTML = (htmlString: string) => {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(htmlString, 'text/html');
+  // Find all elements and filter those with no text or child elements
+  doc.querySelectorAll('*').forEach(el => {
+    if (!el.textContent?.trim() && el.children.length === 0 && !['IMG', 'BR', 'HR'].includes(el.tagName)) {
+      el.remove();
+    }
+  });
+  return doc.body.innerHTML;
+};
+
+
 interface BlogPostFormPageProps {
   /** Present when editing an existing post */
   postId?: string
@@ -80,6 +93,9 @@ export default function BlogPostFormPage({ postId }: BlogPostFormPageProps) {
 
   async function onSubmit(data: BlogPostFormData) {
     try {
+      data.body = cleanHTML(data.body)
+      // Remove empty tags
+      data.body = data.body.replace(/<[^/>]*><\/[^>]*>/g, '')
       if (isEditMode && postId) {
         await updatePost(postId, data)
         addNotification({

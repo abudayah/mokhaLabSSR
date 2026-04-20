@@ -1,6 +1,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&display=swap');
 @import 'tailwindcss';
 @import 'tw-animate-css';
+@import './blog.css';
+
+@plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -120,7 +123,7 @@
 }
 
 @layer base {
-  * {
+  *:not(.blog-prose, .blog-prose *, .prose, .prose *, .ql-editor, .ql-editor *) {
     @apply border-border outline-ring/50;
   }
   body {
