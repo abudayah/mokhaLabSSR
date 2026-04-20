@@ -73,7 +73,7 @@ export default async function BlogListPage() {
           {posts.length > 0 && <HeroPost post={posts[0]} />}
 
           {posts.length > 1 && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-12">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
               {posts.slice(1).map((post) => (
                 <PostCard key={post.slug} post={post} />
               ))}

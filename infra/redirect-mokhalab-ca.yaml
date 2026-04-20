@@ -1,0 +1,151 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  Redirects mokhalab.ca (and www.mokhalab.ca) to https://www.mokhalab.com
+  using S3 + CloudFront + Route 53.
+
+  Prerequisites:
+    - Route 53 hosted zone for mokhalab.ca already exists (managed by Amplify)
+    - ACM certificate for mokhalab.ca already exists in us-east-1 (managed by Amplify)
+
+  Deploy with:
+    aws cloudformation deploy \
+      --template-file infra/redirect-mokhalab-ca.yaml \
+      --stack-name mokhalab-ca-redirect \
+      --region us-east-1 \
+      --parameter-overrides \
+          HostedZoneId=<your-hosted-zone-id> \
+          CertificateArn=<your-acm-cert-arn>
+
+  Find your values:
+    HostedZoneId → Route 53 console → Hosted zones → mokhalab.ca → Hosted zone ID
+    CertificateArn → ACM console (us-east-1) → find cert for mokhalab.ca → ARN
+
+Parameters:
+  HostedZoneId:
+    Type: String
+    Description: Route 53 Hosted Zone ID for mokhalab.ca (e.g. Z0123456789ABCDEFGHIJ)
+
+  RedirectTarget:
+    Type: String
+    Default: "www.mokhalab.com"
+    Description: Destination hostname to redirect to (without https://)
+
+Resources:
+
+  # ── S3 Bucket ──────────────────────────────────────────────────────────────
+  # No content — configured purely to redirect all requests to mokhalab.com.
+  # CloudFront connects to the S3 website endpoint over HTTP internally,
+  # so no public access is required on the bucket itself.
+  RedirectBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "mokhalab-ca-redirect-${AWS::AccountId}"
+      WebsiteConfiguration:
+        RedirectAllRequestsTo:
+          HostName: !Ref RedirectTarget
+          Protocol: "https"
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  # ── ACM Certificate ────────────────────────────────────────────────────────
+  # Creates a new cert in us-east-1 (required for CloudFront).
+  # DomainValidationOptions + HostedZoneId means CloudFormation will
+  # automatically create the DNS validation records in Route 53 — no manual step.
+  RedirectCertificate:
+    Type: AWS::CertificateManager::Certificate
+    Properties:
+      DomainName: "mokhalab.ca"
+      SubjectAlternativeNames:
+        - "www.mokhalab.ca"
+      ValidationMethod: DNS
+      DomainValidationOptions:
+        - DomainName: "mokhalab.ca"
+          HostedZoneId: !Ref HostedZoneId
+        - DomainName: "www.mokhalab.ca"
+          HostedZoneId: !Ref HostedZoneId
+      Tags:
+        - Key: Project
+          Value: mokhaLab
+
+  # ── CloudFront Distribution ────────────────────────────────────────────────
+  # Provides HTTPS termination using the existing Amplify-managed ACM cert.
+  # Receives requests for mokhalab.ca, forwards to S3, which issues a 301.
+  RedirectDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        Comment: "Redirect mokhalab.ca → www.mokhalab.com"
+        HttpVersion: http2
+        Aliases:
+          - "mokhalab.ca"
+          - "www.mokhalab.ca"
+        ViewerCertificate:
+          AcmCertificateArn: !Ref RedirectCertificate
+          SslSupportMethod: sni-only
+          MinimumProtocolVersion: TLSv1.2_2021
+        Origins:
+          - Id: S3RedirectOrigin
+            # Must use the S3 website endpoint (not REST endpoint) for redirects to work
+            DomainName: !Select [1, !Split ["//", !GetAtt RedirectBucket.WebsiteURL]]
+            CustomOriginConfig:
+              HTTPPort: 80
+              HTTPSPort: 443
+              OriginProtocolPolicy: http-only
+        DefaultCacheBehavior:
+          TargetOriginId: S3RedirectOrigin
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods:
+            - GET
+            - HEAD
+          CachedMethods:
+            - GET
+            - HEAD
+          ForwardedValues:
+            QueryString: false
+            Cookies:
+              Forward: none
+          DefaultTTL: 86400    # 1 day
+          MinTTL: 0
+          MaxTTL: 31536000     # 1 year
+          Compress: true
+        PriceClass: PriceClass_100  # US, Canada, Europe
+
+  # ── Route 53 Records ───────────────────────────────────────────────────────
+  # These overwrite the existing Amplify records for mokhalab.ca,
+  # pointing the domain at this CloudFront distribution instead.
+  ApexRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: "mokhalab.ca."
+      Type: A
+      AliasTarget:
+        HostedZoneId: Z2FDTNDATAQYW2  # CloudFront hosted zone ID — always this value
+        DNSName: !GetAtt RedirectDistribution.DomainName
+
+  WwwRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: "www.mokhalab.ca."
+      Type: A
+      AliasTarget:
+        HostedZoneId: Z2FDTNDATAQYW2  # CloudFront hosted zone ID — always this value
+        DNSName: !GetAtt RedirectDistribution.DomainName
+
+Outputs:
+  CloudFrontDomain:
+    Description: CloudFront domain name (for reference — DNS is handled by Route 53 above)
+    Value: !GetAtt RedirectDistribution.DomainName
+
+  CloudFrontDistributionId:
+    Description: CloudFront Distribution ID
+    Value: !Ref RedirectDistribution
+
+  S3WebsiteURL:
+    Description: S3 website endpoint (internal use by CloudFront)
+    Value: !GetAtt RedirectBucket.WebsiteURL

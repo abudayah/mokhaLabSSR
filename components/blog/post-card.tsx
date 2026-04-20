@@ -18,7 +18,7 @@ export function PostCard({ post }: PostCardProps) {
 
   return (
     <Link href={`/blog/${post.slug}`} className="block transition-colors duration-200">
-      <article className="py-6">
+      <article className="py-3">
         {post.featuredImage && (
           <div className="aspect-video overflow-hidden rounded-lg mb-4">
             <S3Image
