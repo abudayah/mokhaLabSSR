@@ -77,7 +77,7 @@ export async function generateMetadata({
       description,
       url,
       siteName: "mokhaLab",
-      locale: "en_CA",
+      locale: "en_US",
       type: "article",
       publishedTime: post.date,
       authors: [post.author],

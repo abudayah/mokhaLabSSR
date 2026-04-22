@@ -16,7 +16,7 @@ export const metadata: Metadata = {
       "Precision-engineered espresso tools for the serious barista. Tampers, distributors, WDT tools and more — crafted in Canada.",
     url: `${SITE_URL}/`,
     siteName: "mokhaLab",
-    locale: "en_CA",
+    locale: "en_US",
     type: "website",
     images: [{ url: `${SITE_URL}/images/hero.webp` }],
   },

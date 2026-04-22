@@ -42,7 +42,7 @@ export function generateMetadata({
       description,
       url,
       siteName: "mokhaLab",
-      locale: "en_CA",
+      locale: "en_US",
       type: "website",
       images: [{ url: ogImageUrl, width: 1200, height: 630, alt: product.name }],
     },
