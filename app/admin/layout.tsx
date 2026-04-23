@@ -5,6 +5,7 @@ import AmplifyProvider from "./_components/AmplifyProvider"
 
 export const metadata: Metadata = {
   title: "mokhaLab Admin",
+  robots: "noindex, nofollow",
 }
 
 /**
