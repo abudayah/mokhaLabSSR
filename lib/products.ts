@@ -29,7 +29,7 @@ export const products: Product[] = [
     tagline: "30lb. Self-leveling. Every time.",
     description:
       "Achieve professional-level consistency with the mokhaLab Spring-Loaded Calibrated Tamper. The self-leveling design sits flush against your portafilter for a perfectly flat puck every time. The internal 30lb constant-pressure mechanism delivers a tactile impact feel that guarantees repeatable results regardless of technique — paired with an ergonomic natural wooden handle.",
-    prices: { USD: 59.95, CAD: 59.95 },
+    prices: { USD: 49.95, CAD: 59.95 },
     image: "/images/ML-PIT-BLK-53-01/602835779023.main.webp",
     images: [
       "/images/ML-PIT-BLK-53-01/602835779023.main.webp",
@@ -67,7 +67,7 @@ export const products: Product[] = [
     tagline: "30lb. Self-leveling. Every time.",
     description:
       "Achieve professional-level consistency with the mokhaLab Spring-Loaded Calibrated Tamper. The self-leveling design sits flush against your portafilter for a perfectly flat puck every time. The internal 30lb constant-pressure mechanism delivers a tactile impact feel that guarantees repeatable results regardless of technique — paired with an ergonomic natural wooden handle.",
-    prices: { USD: 59.95, CAD: 59.95 },
+    prices: { USD: 49.95, CAD: 59.95 },
     image: "/images/ML-PIT-BLK-58-01/602835779023.main.webp",
     images: [
       "/images/ML-PIT-BLK-58-01/602835779023.main.webp",
@@ -105,7 +105,7 @@ export const products: Product[] = [
     tagline: "No clumps. No channeling. Just clarity.",
     description:
       "Say goodbye to channeling and uneven extractions. The mokhaLab WDT tool breaks up clumps in your coffee grounds, ensuring a perfectly even density throughout your portafilter. The innovative flick mechanism dispenses 6 precision needles with a press and retracts them with a shake — no pricked fingers, no bent needles.",
-    prices: { USD: 59.95, CAD: 59.95 },
+    prices: { USD: 29.95, CAD: 39.95 },
     image: "/images/ML-FWDT-BLK-01/602835779061.main.webp",
     images: [
       "/images/ML-FWDT-BLK-01/602835779061.main.webp",
@@ -143,7 +143,7 @@ export const products: Product[] = [
     tagline: "Self-leveling. Every time. No guesswork.",
     description:
       "Master your espresso prep with the mokhaLab Gravity Adaptive Distributor. The intelligent self-adjusting mechanism automatically sinks to the perfect depth of your coffee grounds, using gravity to level the bed for a perfectly even surface every time — no manual height adjustments needed. Premium walnut handle meets food-grade stainless steel base.",
-    prices: { USD: 59.95, CAD: 59.95 },
+    prices: { USD: 49.95, CAD: 59.95 },
     image: "/images/ML-GAD-BLK-58-01/602835779047.main.webp",
     images: [
       "/images/ML-GAD-BLK-58-01/602835779047.main.webp",
@@ -181,7 +181,7 @@ export const products: Product[] = [
     tagline: "Your barista corner, beautifully organized.",
     description:
       "Transform your coffee corner into a professional barista workstation. Crafted from premium solid walnut wood, this tamper station combines organic beauty with functional design. The bear-inspired layout organizes your tamper, distributor, and portafilter into a compact footprint, while adjustable height and non-slip silicone pads keep everything stable and scratch-free.",
-    prices: { USD: 59.95, CAD: 59.95 },
+    prices: { USD: 69.95, CAD: 89.95 },
     image: "/images/ML-WTS-WLN-01/602835779054.main.webp",
     images: [
       "/images/ML-WTS-WLN-01/602835779054.main.webp",
