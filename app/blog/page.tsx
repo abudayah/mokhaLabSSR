@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     title: "Blog | mokhaLab",
     description:
       "Stories about coffee culture, brewing rituals, and the philosophy behind mokhaLab tools.",
-    url: `${SITE_URL}/blog/`,
+    url: `${SITE_URL}/blog`,
     siteName: "mokhaLab",
     locale: "en_US",
     type: "website",
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
       "Stories about coffee culture, brewing rituals, and the philosophy behind mokhaLab tools.",
     images: [`${SITE_URL}/images/hero.webp`],
   },
-  alternates: { canonical: `${SITE_URL}/blog/` },
+  alternates: { canonical: `${SITE_URL}/blog` },
 }
 
 async function getPosts(): Promise<BlogPost[]> {
