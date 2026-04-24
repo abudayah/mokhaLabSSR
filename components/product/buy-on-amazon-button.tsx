@@ -1,7 +1,7 @@
 "use client"
 
 import { ShoppingBag } from "lucide-react"
-import { useCurrency } from "@/contexts/currency-context"
+import { useCountry } from "@/contexts/country-context"
 
 interface BuyOnAmazonButtonProps {
   urls: { us?: string; ca?: string }
@@ -12,8 +12,6 @@ interface BuyOnAmazonButtonProps {
 
 function trackBuyClick(label: string, url: string, store: "us" | "ca") {
   try {
-    // GA4 custom event — "begin_checkout" is a standard recommended ecommerce event.
-    // It will appear under Events in GA4 and can be marked as a Key Event in Admin.
     window.gtag?.("event", "add_to_cart", {
       event_category: "ecommerce",
       event_label: label,
@@ -26,14 +24,13 @@ function trackBuyClick(label: string, url: string, store: "us" | "ca") {
 }
 
 export function BuyOnAmazonButton({ urls, productName, size = "md", align = "start" }: BuyOnAmazonButtonProps) {
-  const { currency } = useCurrency()
-  const isCA = currency === "CAD"
+  const { country } = useCountry()
+  const isCA = country === "CA"
 
-  // If the preferred regional URL is missing, fall back to whichever exists
   const hasCA = Boolean(urls.ca)
   const hasUS = Boolean(urls.us)
 
-  // Determine which URL to show as primary
+  // Determine which URL to show as primary based on selected country
   const preferCA = isCA && hasCA
   const primaryUrl = preferCA ? urls.ca! : urls.us!
   const primaryLabel = preferCA ? "Buy on Amazon.ca" : "Buy on Amazon.com"
@@ -47,7 +44,6 @@ export function BuyOnAmazonButton({ urls, productName, size = "md", align = "sta
   const textSize = size === "lg" ? "text-[17px]" : "text-[16px]"
   const padding = size === "lg" ? "px-10 py-4 rounded-[14px]" : "px-8 py-4 rounded-[12px]"
 
-  // Nothing to render if no URLs at all
   if (!primaryUrl) return null
 
   return (

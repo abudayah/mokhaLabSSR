@@ -34,7 +34,14 @@ export const metadata: Metadata = {
       "Stories about coffee culture, brewing rituals, and the philosophy behind mokhaLab tools.",
     images: [`${SITE_URL}/images/hero.webp`],
   },
-  alternates: { canonical: `${SITE_URL}/blog` },
+  alternates: {
+    canonical: `${SITE_URL}/blog`,
+    languages: {
+      "en-US": `${SITE_URL}/blog`,
+      "en-CA": `${SITE_URL}/blog`,
+      "x-default": `${SITE_URL}/blog`,
+    },
+  },
 }
 
 async function getPosts(): Promise<BlogPost[]> {

@@ -17,7 +17,14 @@ export const metadata: Metadata = {
     locale: "en_US",
     type: "website",
   },
-  alternates: { canonical: "https://www.mokhalab.com/products" },
+  alternates: {
+    canonical: "https://www.mokhalab.com/products",
+    languages: {
+      "en-US": "https://www.mokhalab.com/products",
+      "en-CA": "https://www.mokhalab.com/products",
+      "x-default": "https://www.mokhalab.com/products",
+    },
+  },
 }
 
 export default function ProductsListPage() {

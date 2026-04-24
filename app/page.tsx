@@ -27,7 +27,14 @@ export const metadata: Metadata = {
       "Precision-engineered espresso tools for the serious barista. Tampers, distributors, WDT tools and more — crafted in Canada.",
     images: [`${SITE_URL}/images/hero.webp`],
   },
-  alternates: { canonical: `${SITE_URL}/` },
+  alternates: {
+    canonical: `${SITE_URL}/`,
+    languages: {
+      "en-US": `${SITE_URL}/`,
+      "en-CA": `${SITE_URL}/`,
+      "x-default": `${SITE_URL}/`,
+    },
+  },
 }
 
 export default function HomePage() {

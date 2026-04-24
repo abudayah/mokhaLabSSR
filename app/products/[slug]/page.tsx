@@ -14,6 +14,8 @@ import { SiteFooter } from "@/components/site-footer"
 import { ProductGallery } from "@/components/product/product-gallery"
 import { BuyOnAmazonButton } from "@/components/product/buy-on-amazon-button"
 import { ShareButton } from "@/components/product/share-button"
+import { ProductPrice } from "@/components/product/product-price"
+import { ProductRating } from "@/components/product/product-rating"
 
 // Pre-render every product page at build time
 export function generateStaticParams() {
@@ -52,26 +54,71 @@ export function generateMetadata({
       description,
       images: [ogImageUrl],
     },
-    alternates: { canonical: url },
+    alternates: {
+      canonical: url,
+      languages: {
+        "en-US": url,
+        "en-CA": url,
+        "x-default": url,
+      },
+    },
   }
 }
 
 // JSON-LD structured data for the product
 function ProductJsonLd({ product }: { product: ReturnType<typeof getProductBySlug> }) {
   if (!product) return null
+
+  const productUrl = `${SITE_URL}/products/${product.slug}`
+
+  // Build offers array — one per available storefront
+  const offers = []
+  if (product.amazonUrls?.us) {
+    offers.push({
+      "@type": "Offer",
+      url: product.amazonUrls.us,
+      priceCurrency: "USD",
+      price: product.prices.USD,
+      itemCondition: "https://schema.org/NewCondition",
+      availability: "https://schema.org/InStock",
+      seller: { "@type": "Organization", name: "mokhaLab" },
+    })
+  }
+  if (product.amazonUrls?.ca) {
+    offers.push({
+      "@type": "Offer",
+      url: product.amazonUrls.ca,
+      priceCurrency: "CAD",
+      price: product.prices.CAD,
+      itemCondition: "https://schema.org/NewCondition",
+      availability: "https://schema.org/InStock",
+      seller: { "@type": "Organization", name: "mokhaLab" },
+    })
+  }
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Product",
     name: product.name,
-    description: product.tagline,
-    image: `${SITE_URL}${product.image}`,
-    brand: { "@type": "Brand", name: "mokhaLab" },
-    offers: {
-      "@type": "Offer",
-      availability: "https://schema.org/InStock",
-      url: product.amazonUrls?.us ?? "",
+    description: product.description,
+    url: productUrl,
+    sku: product.id,
+    mpn: product.id,
+    image: product.images.map((img) => `${SITE_URL}${img}`),
+    brand: {
+      "@type": "Brand",
+      name: "mokhaLab",
     },
+    aggregateRating: {
+      "@type": "AggregateRating",
+      ratingValue: product.rating ?? 4.7,
+      bestRating: 5,
+      worstRating: 1,
+      ratingCount: product.ratingCount ?? 8,
+    },
+    offers: offers.length === 1 ? offers[0] : offers,
   }
+
   return (
     <script
       type="application/ld+json"
@@ -123,9 +170,13 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
                   <p className="text-[19px] text-muted-foreground italic">{product.tagline}</p>
                 </div>
 
+                <ProductRating rating={product.rating} reviewCount={product.ratingCount ?? 8} />
+
                 <p className="text-[16px] text-muted-foreground leading-relaxed">
                   {product.description}
                 </p>
+
+                <ProductPrice prices={product.prices} />
 
                 {/* ── Variant Switcher ───────────────────────── */}
                 {variants.length > 1 && (

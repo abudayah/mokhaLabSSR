@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation"
 import { Menu } from "lucide-react"
 import { useState } from "react"
 import { SocialLinks } from "@/components/social-links"
+import { CountrySwitcher } from "@/components/country-switcher"
 import { cn } from "@/lib/utils"
 
 export function SiteHeader() {
@@ -58,6 +59,7 @@ export function SiteHeader() {
             Contact
           </a>
           <SocialLinks size={18} />
+          <CountrySwitcher />
         </nav>
 
         {/* Mobile menu button */}
@@ -96,6 +98,7 @@ export function SiteHeader() {
             className="flex items-center gap-4"
             iconClassName="text-muted-foreground hover:text-foreground transition-colors"
           />
+          <CountrySwitcher />
         </div>
       )}
     </header>

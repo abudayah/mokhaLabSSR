@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import Script from "next/script"
 import { ConsentBanner } from "@/components/consent-banner"
+import { CountryProvider } from "@/contexts/country-context"
 import "./globals.css"
 import "./app.css"
 
@@ -43,14 +44,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://www.amazon.ca" />
       </head>
       <body className={inter.variable}>
-        {/*
-         * Consent Mode v2 — default state (denied).
-         * Must run BEFORE GA so Google tags start in denied mode.
-         * The ConsentBanner component updates these values via dataLayer
-         * once the user makes a choice.
-         */}
-        <Script id="consent-default" strategy="beforeInteractive">
-          {`
+        <CountryProvider>
+          {/*
+           * Consent Mode v2 — default state (denied).
+           * Must run BEFORE GA so Google tags start in denied mode.
+           * The ConsentBanner component updates these values via dataLayer
+           * once the user makes a choice.
+           */}
+          <Script id="consent-default" strategy="beforeInteractive">
+            {`
 window.dataLayer = window.dataLayer || [];
 function gtag(){dataLayer.push(arguments);}
 gtag('consent', 'default', {
@@ -62,27 +64,28 @@ gtag('consent', 'default', {
 });
 gtag('set', 'ads_data_redaction', true);
 gtag('set', 'url_passthrough', true);
-          `}
-        </Script>
+            `}
+          </Script>
 
-        {/* Google Analytics (gtag.js) */}
-        <Script
-          src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
-          strategy="afterInteractive"
-        />
-        <Script id="ga-init" strategy="afterInteractive">
-          {`
+          {/* Google Analytics (gtag.js) */}
+          <Script
+            src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
+            strategy="afterInteractive"
+          />
+          <Script id="ga-init" strategy="afterInteractive">
+            {`
 window.dataLayer = window.dataLayer || [];
 function gtag(){dataLayer.push(arguments);}
 gtag('js', new Date());
 gtag('config', '${GA_ID}');
-          `}
-        </Script>
+            `}
+          </Script>
 
-        {children}
+          {children}
 
-        {/* Consent banner — renders client-side, hidden once user has chosen */}
-        <ConsentBanner />
+          {/* Consent banner — renders client-side, hidden once user has chosen */}
+          <ConsentBanner />
+        </CountryProvider>
       </body>
     </html>
   )
