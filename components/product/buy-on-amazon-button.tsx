@@ -9,8 +9,8 @@ interface BuyOnAmazonButtonProps {
   productName?: string
   /** Product id from lib/products.ts — used as content_ids in Meta Pixel events */
   productId?: string
-  /** Both prices from the product entry — correct currency is picked based on store */
-  prices?: { USD: number; CAD: number }
+  /** USD price for Meta Pixel value field */
+  priceUSD?: number
   size?: "md" | "lg"
   align?: "start" | "center"
 }
@@ -20,7 +20,7 @@ function trackBuyClick(
   url: string,
   store: "us" | "ca",
   productId?: string,
-  prices?: { USD: number; CAD: number }
+  priceUSD?: number
 ) {
   // Google Analytics
   try {
@@ -35,8 +35,8 @@ function trackBuyClick(
   }
 
   // Meta Pixel — only fire when we have a product ID to match the catalog
-  if (productId && prices) {
-    trackAddToCart(productId, label, prices, store)
+  if (productId) {
+    trackAddToCart(productId, label, priceUSD ?? 0)
   }
 }
 
@@ -44,7 +44,7 @@ export function BuyOnAmazonButton({
   urls,
   productName,
   productId,
-  prices,
+  priceUSD,
   size = "md",
   align = "start",
 }: BuyOnAmazonButtonProps) {
@@ -77,7 +77,7 @@ export function BuyOnAmazonButton({
         target="_blank"
         rel="noopener noreferrer"
         onClick={() =>
-          trackBuyClick(productName ?? primaryLabel, primaryUrl, preferCA ? "ca" : "us", productId, prices)
+          trackBuyClick(productName ?? primaryLabel, primaryUrl, preferCA ? "ca" : "us", productId, priceUSD)
         }
         className={`inline-flex items-center justify-center gap-2 bg-[#00A8E1] text-white font-semibold hover:opacity-90 active:opacity-80 transition-opacity ${textSize} ${padding}`}
       >
@@ -92,7 +92,7 @@ export function BuyOnAmazonButton({
             target="_blank"
             rel="noopener noreferrer"
             onClick={() =>
-              trackBuyClick(productName ?? altLabel, altUrl, preferCA ? "us" : "ca", productId, prices)
+              trackBuyClick(productName ?? altLabel, altUrl, preferCA ? "us" : "ca", productId, priceUSD)
             }
             className="underline underline-offset-2 hover:text-foreground transition-colors"
           >

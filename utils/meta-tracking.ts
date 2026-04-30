@@ -59,47 +59,41 @@ export function trackViewContent(productId: string, productName: string): void {
 /**
  * Fire an AddToCart event when the user clicks a Buy on Amazon button.
  *
- * @param productId   The product's `id` from lib/products.ts (e.g. "ML-PIT-BLK-53-01")
- * @param productName Human-readable product name for the event label
- * @param prices      Both USD and CAD prices from the product entry
- * @param store       Which storefront the user clicked — determines currency reported
+ * @param productId  The product's `id` from lib/products.ts (e.g. "ML-PIT-BLK-53-01")
+ * @param productName  Human-readable product name for the event label
+ * @param priceUSD  USD price for the value field (pass 0 if unknown)
  */
 export function trackAddToCart(
   productId: string,
   productName: string,
-  prices: { USD: number; CAD: number },
-  store: "us" | "ca"
+  priceUSD: number
 ): void {
-  const isCA = store === "ca"
   fire("AddToCart", {
     content_ids: [productId],
     content_type: "product",
     content_name: productName,
-    value: isCA ? prices.CAD : prices.USD,
-    currency: isCA ? "CAD" : "USD",
+    value: priceUSD,
+    currency: "USD",
   })
 }
 
 /**
  * Fire a Purchase event (for future use — e.g. post-purchase confirmation page).
  *
- * @param productId   The product's `id` from lib/products.ts
- * @param productName Human-readable product name
- * @param prices      Both USD and CAD prices from the product entry
- * @param store       Which storefront — determines currency reported
+ * @param productId  The product's `id` from lib/products.ts
+ * @param productName  Human-readable product name
+ * @param priceUSD  USD price for the value field
  */
 export function trackPurchase(
   productId: string,
   productName: string,
-  prices: { USD: number; CAD: number },
-  store: "us" | "ca"
+  priceUSD: number
 ): void {
-  const isCA = store === "ca"
   fire("Purchase", {
     content_ids: [productId],
     content_type: "product",
     content_name: productName,
-    value: isCA ? prices.CAD : prices.USD,
-    currency: isCA ? "CAD" : "USD",
+    value: priceUSD,
+    currency: "USD",
   })
 }
