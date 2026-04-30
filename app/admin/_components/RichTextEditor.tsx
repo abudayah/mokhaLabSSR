@@ -17,7 +17,7 @@ interface RichTextEditorProps {
 // "fullscreen" is a custom format registered below via Quill.register —
 // it must appear in TOOLBAR_OPTIONS so Quill renders the button natively.
 const TOOLBAR_OPTIONS = [
-  [{ header: [2, 3, false] }],
+  [{ header: [2, 3, 4, 5, false] }],
   ["bold", "italic", "underline", "strike"],
   ["blockquote", "code-block"],
   [{ list: "ordered" }, { list: "bullet" }],
