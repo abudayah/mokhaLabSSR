@@ -16,6 +16,7 @@ import { BuyOnAmazonButton } from "@/components/product/buy-on-amazon-button"
 import { ShareButton } from "@/components/product/share-button"
 import { ProductPrice } from "@/components/product/product-price"
 import { ProductRating } from "@/components/product/product-rating"
+import { ProductViewTracker } from "@/components/product/product-view-tracker"
 
 // Pre-render every product page at build time
 export function generateStaticParams() {
@@ -142,6 +143,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
   return (
     <>
       <ProductJsonLd product={product} />
+      <ProductViewTracker productId={product.id} productName={product.name} />
       <div className="min-h-screen bg-background">
         <SiteHeader />
 
@@ -208,7 +210,12 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
                 )}
 
                 <div className="flex flex-col gap-3 pt-2">
-                  <BuyOnAmazonButton urls={amazonUrls} productName={product.name} />
+                  <BuyOnAmazonButton
+                    urls={amazonUrls}
+                    productName={product.name}
+                    productId={product.id}
+                    priceUSD={product.prices.USD}
+                  />
                   <ShareButton title={product.name} text={product.tagline} />
                 </div>
 
@@ -323,7 +330,14 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
               <p className="text-[17px] text-muted-foreground leading-relaxed mb-10 text-balance">
                 {product.tagline}
               </p>
-              <BuyOnAmazonButton urls={amazonUrls} productName={product.name} size="lg" align="center" />
+              <BuyOnAmazonButton
+                urls={amazonUrls}
+                productName={product.name}
+                productId={product.id}
+                priceUSD={product.prices.USD}
+                size="lg"
+                align="center"
+              />
             </div>
           </section>
         </main>

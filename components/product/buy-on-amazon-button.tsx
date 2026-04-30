@@ -2,15 +2,27 @@
 
 import { ShoppingBag } from "lucide-react"
 import { useCountry } from "@/contexts/country-context"
+import { trackAddToCart } from "@/utils/meta-tracking"
 
 interface BuyOnAmazonButtonProps {
   urls: { us?: string; ca?: string }
   productName?: string
+  /** Product id from lib/products.ts — used as content_ids in Meta Pixel events */
+  productId?: string
+  /** USD price for Meta Pixel value field */
+  priceUSD?: number
   size?: "md" | "lg"
   align?: "start" | "center"
 }
 
-function trackBuyClick(label: string, url: string, store: "us" | "ca") {
+function trackBuyClick(
+  label: string,
+  url: string,
+  store: "us" | "ca",
+  productId?: string,
+  priceUSD?: number
+) {
+  // Google Analytics
   try {
     window.gtag?.("event", "add_to_cart", {
       event_category: "ecommerce",
@@ -21,9 +33,21 @@ function trackBuyClick(label: string, url: string, store: "us" | "ca") {
   } catch {
     // gtag not available (e.g. consent denied, ad blocker) — fail silently
   }
+
+  // Meta Pixel — only fire when we have a product ID to match the catalog
+  if (productId) {
+    trackAddToCart(productId, label, priceUSD ?? 0)
+  }
 }
 
-export function BuyOnAmazonButton({ urls, productName, size = "md", align = "start" }: BuyOnAmazonButtonProps) {
+export function BuyOnAmazonButton({
+  urls,
+  productName,
+  productId,
+  priceUSD,
+  size = "md",
+  align = "start",
+}: BuyOnAmazonButtonProps) {
   const { country } = useCountry()
   const isCA = country === "CA"
 
@@ -52,7 +76,9 @@ export function BuyOnAmazonButton({ urls, productName, size = "md", align = "sta
         href={primaryUrl}
         target="_blank"
         rel="noopener noreferrer"
-        onClick={() => trackBuyClick(productName ?? primaryLabel, primaryUrl, preferCA ? "ca" : "us")}
+        onClick={() =>
+          trackBuyClick(productName ?? primaryLabel, primaryUrl, preferCA ? "ca" : "us", productId, priceUSD)
+        }
         className={`inline-flex items-center justify-center gap-2 bg-[#00A8E1] text-white font-semibold hover:opacity-90 active:opacity-80 transition-opacity ${textSize} ${padding}`}
       >
         <ShoppingBag size={iconSize} aria-hidden="true" />
@@ -65,7 +91,9 @@ export function BuyOnAmazonButton({ urls, productName, size = "md", align = "sta
             href={altUrl}
             target="_blank"
             rel="noopener noreferrer"
-            onClick={() => trackBuyClick(productName ?? altLabel, altUrl, preferCA ? "us" : "ca")}
+            onClick={() =>
+              trackBuyClick(productName ?? altLabel, altUrl, preferCA ? "us" : "ca", productId, priceUSD)
+            }
             className="underline underline-offset-2 hover:text-foreground transition-colors"
           >
             {altLabel}
