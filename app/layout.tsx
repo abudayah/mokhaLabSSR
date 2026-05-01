@@ -3,6 +3,7 @@ import { Inter } from "next/font/google"
 import Script from "next/script"
 import { ConsentBanner } from "@/components/consent-banner"
 import { CountryProvider } from "@/contexts/country-context"
+import { MetaPixelPageView } from "@/components/meta-pixel-pageview"
 import "./globals.css"
 import "./app.css"
 
@@ -90,7 +91,6 @@ n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
 t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}
 (window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
 fbq('init','981881587864717');
-fbq('track','PageView');
             `}
           </Script>
           <noscript>
@@ -105,6 +105,9 @@ fbq('track','PageView');
           </noscript>
 
           {children}
+
+          {/* Fires fbq PageView on every client-side route change */}
+          <MetaPixelPageView />
 
           {/* Consent banner — renders client-side, hidden once user has chosen */}
           <ConsentBanner />

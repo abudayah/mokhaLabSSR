@@ -17,7 +17,7 @@ interface ProductViewTrackerProps {
  */
 export function ProductViewTracker({ productId, productName }: ProductViewTrackerProps) {
   useEffect(() => {
-    trackViewContent(productId, productName)
+    trackViewContent(productId)
   }, [productId, productName])
 
   return null

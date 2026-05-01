@@ -214,7 +214,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
                     urls={amazonUrls}
                     productName={product.name}
                     productId={product.id}
-                    priceUSD={product.prices.USD}
+                    prices={product.prices}
                   />
                   <ShareButton title={product.name} text={product.tagline} />
                 </div>
@@ -334,7 +334,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
                 urls={amazonUrls}
                 productName={product.name}
                 productId={product.id}
-                priceUSD={product.prices.USD}
+                prices={product.prices}
                 size="lg"
                 align="center"
               />
