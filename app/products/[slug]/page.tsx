@@ -143,7 +143,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
   return (
     <>
       <ProductJsonLd product={product} />
-      <ProductViewTracker productId={product.id} productName={product.name} />
+      <ProductViewTracker productId={product.id} />
       <div className="min-h-screen bg-background">
         <SiteHeader />
 

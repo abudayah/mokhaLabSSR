@@ -5,7 +5,6 @@ import { trackViewContent } from "@/utils/meta-tracking"
 
 interface ProductViewTrackerProps {
   productId: string
-  productName: string
 }
 
 /**
@@ -15,10 +14,10 @@ interface ProductViewTrackerProps {
  * Drop this into the product page Server Component:
  *   <ProductViewTracker productId={product.id} productName={product.name} />
  */
-export function ProductViewTracker({ productId, productName }: ProductViewTrackerProps) {
+export function ProductViewTracker({ productId }: ProductViewTrackerProps) {
   useEffect(() => {
     trackViewContent(productId)
-  }, [productId, productName])
+  }, [productId])
 
   return null
 }
