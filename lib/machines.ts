@@ -1,3 +1,6 @@
+/**
+ * The sizes we typically use are 58.35mm and 53.35mm
+ */
 export type PortafilterSize = 53 | 54 | 58
 
 export interface Machine {

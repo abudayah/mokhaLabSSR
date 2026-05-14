@@ -30,12 +30,14 @@ export const products: Product[] = [
     description:
       "Achieve professional-level consistency with the mokhaLab Spring-Loaded Calibrated Tamper. The self-leveling design sits flush against your portafilter for a perfectly flat puck every time. The internal 30lb constant-pressure mechanism delivers a tactile impact feel that guarantees repeatable results regardless of technique — paired with an ergonomic natural wooden handle.",
     prices: { USD: 49.95, CAD: 59.95 },
-    image: "/images/ML-PIT-BLK-53-01/602835779023.main.webp",
+    image: "/images/ML-PIT-BLK-53-01/main.webp",
     images: [
-      "/images/ML-PIT-BLK-53-01/602835779023.main.webp",
-      "/images/ML-PIT-BLK-53-01/2.webp",
-      "/images/ML-PIT-BLK-53-01/3.webp",
-      "/images/ML-PIT-BLK-53-01/4.webp",
+      "/images/ML-PIT-BLK-53-01/main.webp",
+      "/images/ML-PIT-BLK-53-01/02.webp",
+      "/images/ML-PIT-BLK-53-01/03.webp",
+      "/images/ML-PIT-BLK-53-01/04.webp",
+      "/images/ML-PIT-BLK-53-01/05.webp",
+      "/images/ML-PIT-BLK-53-01/06.webp",
     ],
     amazonUrls: {
       us: "https://www.amazon.com/dp/B0GVW4DT9Y",
@@ -68,12 +70,14 @@ export const products: Product[] = [
     description:
       "Achieve professional-level consistency with the mokhaLab Spring-Loaded Calibrated Tamper. The self-leveling design sits flush against your portafilter for a perfectly flat puck every time. The internal 30lb constant-pressure mechanism delivers a tactile impact feel that guarantees repeatable results regardless of technique — paired with an ergonomic natural wooden handle.",
     prices: { USD: 49.95, CAD: 59.95 },
-    image: "/images/ML-PIT-BLK-58-01/602835779023.main.webp",
+    image: "/images/ML-PIT-BLK-58-01/main.webp",
     images: [
-      "/images/ML-PIT-BLK-58-01/602835779023.main.webp",
-      "/images/ML-PIT-BLK-58-01/2.webp",
-      "/images/ML-PIT-BLK-58-01/3.webp",
-      "/images/ML-PIT-BLK-58-01/4.webp",
+      "/images/ML-PIT-BLK-58-01/main.webp",
+      "/images/ML-PIT-BLK-58-01/02.webp",
+      "/images/ML-PIT-BLK-58-01/03.webp",
+      "/images/ML-PIT-BLK-58-01/04.webp",
+      "/images/ML-PIT-BLK-58-01/05.webp",
+      "/images/ML-PIT-BLK-58-01/06.webp",
     ],
     amazonUrls: {
       us: "https://www.amazon.com/dp/B0GVVR29R8",
