@@ -25,8 +25,8 @@ const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.mokhalab.com"
 // ── Inline product image map (mirrors lib/products.ts) ──────────────────────
 // Keeping this separate avoids needing ts-node / tsx just for a build script.
 const productImages = [
-  { id: "ML-PIT-BLK-53-01", image: "/images/ML-PIT-BLK-53-01/602835779023.main.webp" },
-  { id: "ML-PIT-BLK-58-01", image: "/images/ML-PIT-BLK-58-01/602835779023.main.webp" },
+  { id: "ML-PIT-BLK-53-01", image: "/images/ML-PIT-BLK-53-01/main.webp" },
+  { id: "ML-PIT-BLK-58-01", image: "/images/ML-PIT-BLK-58-01/main.webp" },
   { id: "ML-FWDT-BLK-01",   image: "/images/ML-FWDT-BLK-01/602835779061.main.webp"   },
   { id: "ML-GAD-BLK-58-01", image: "/images/ML-GAD-BLK-58-01/602835779047.main.webp" },
   { id: "ML-WTS-WLN-01",    image: "/images/ML-WTS-WLN-01/602835779054.main.webp"    },

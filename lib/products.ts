@@ -153,7 +153,6 @@ export const products: Product[] = [
       "/images/ML-GAD-BLK-58-01/602835779047.main.webp",
       "/images/ML-GAD-BLK-58-01/602835779047.33.webp",
       "/images/ML-GAD-BLK-58-01/2.webp",
-      "/images/ML-GAD-BLK-58-01/3.webp",
       "/images/ML-GAD-BLK-58-01/4.webp",
     ],
     amazonUrls: {
@@ -192,6 +191,8 @@ export const products: Product[] = [
       "/images/ML-WTS-WLN-01/2.webp",
       "/images/ML-WTS-WLN-01/3.webp",
       "/images/ML-WTS-WLN-01/4 (1)~3.webp",
+      "/images/ML-WTS-WLN-01/06.webp",
+      "/images/ML-WTS-WLN-01/07.webp",
     ],
     amazonUrls: {
       us: "https://www.amazon.com/dp/B0GW4K1C2H",
@@ -228,6 +229,8 @@ export const products: Product[] = [
       "/images/ML-WBT-2PK-01/602835779078.main.webp",
       "/images/ML-WBT-2PK-01/2.webp",
       "/images/ML-WBT-2PK-01/3.webp",
+      "/images/ML-WBT-2PK-01/4444.webp",
+      "/images/ML-WBT-2PK-01/2 (2).webp",
     ],
     amazonUrls: {
       us: "https://www.amazon.com/dp/B0GW4RL842",
