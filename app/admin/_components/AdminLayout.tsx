@@ -20,6 +20,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   // Match /admin/blog and sub-routes (edit, new) to the Blog Posts nav item
   function getActiveHref(path: string): string {
     if (path.startsWith("/admin/blog")) return "/admin/blog"
+    if (path.startsWith("/admin/qr-links")) return "/admin/qr-links"
     if (path === "/admin" || path === "/admin/") return "/admin"
     return path
   }
@@ -58,6 +59,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             items={[
               { type: "link", text: "Dashboard", href: "/admin" },
               { type: "link", text: "Blog Posts", href: "/admin/blog" },
+              { type: "link", text: "QR Links", href: "/admin/qr-links" },
               {
                 type: "link",
                 text: "Products",

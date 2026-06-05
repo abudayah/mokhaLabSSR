@@ -17,6 +17,31 @@ const schema = a.schema({
       // Public (API key) can read — for the public blog
       allow.publicApiKey().to(["read"]),
     ]),
+
+  QrLink: a
+    .model({
+      code: a.string().required(),
+      destinationUrl: a.string().required(),
+      label: a.string(),
+      clickCount: a.integer().default(0),
+      lastClickedAt: a.string(),
+    })
+    .authorization((allow) => [
+      allow.authenticated(),
+    ]),
+
+  ClickEvent: a
+    .model({
+      qrLinkId: a.string().required(),
+      clickedAt: a.string().required(),
+      userAgent: a.string(),
+      ip: a.string(),
+      referer: a.string(),
+    })
+    .authorization((allow) => [
+      allow.authenticated().to(["read", "create", "update", "delete"]),
+      allow.publicApiKey().to(["create"]),
+    ]),
 })
 
 export type Schema = ClientSchema<typeof schema>

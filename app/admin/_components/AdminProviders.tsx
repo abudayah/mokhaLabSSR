@@ -1,6 +1,7 @@
 "use client"
 
 import { BlogPostStoreProvider } from "./context/BlogPostStoreContext"
+import { QrLinkStoreProvider } from "./context/QrLinkStoreContext"
 import { NotificationProvider } from "./context/NotificationContext"
 
 /**
@@ -11,7 +12,9 @@ import { NotificationProvider } from "./context/NotificationContext"
 export default function AdminProviders({ children }: { children: React.ReactNode }) {
   return (
     <BlogPostStoreProvider>
-      <NotificationProvider>{children}</NotificationProvider>
+      <QrLinkStoreProvider>
+        <NotificationProvider>{children}</NotificationProvider>
+      </QrLinkStoreProvider>
     </BlogPostStoreProvider>
   )
 }
