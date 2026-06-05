@@ -30,11 +30,14 @@ interface CreateQrLinkModalProps {
 function CreateQrLinkModal({ visible, onDismiss }: CreateQrLinkModalProps) {
   const { createLink } = useQrLinkStore()
   const { addNotification } = useNotifications()
+  const [fetchingTitle, setFetchingTitle] = useState(false)
 
   const {
     control,
     handleSubmit,
     reset,
+    setValue,
+    getValues,
     formState: { errors, isSubmitting },
   } = useForm<QrLinkFormData>({
     resolver: zodResolver(qrLinkSchema),
@@ -50,6 +53,34 @@ function CreateQrLinkModal({ visible, onDismiss }: CreateQrLinkModalProps) {
   function handleDismiss() {
     reset()
     onDismiss()
+  }
+
+  async function handleUrlBlur() {
+    const url = getValues("destinationUrl")
+    if (!url) return
+    // Only fetch if label is still empty — don't overwrite user input
+    const currentLabel = getValues("label")
+    if (currentLabel && currentLabel.trim() !== "") return
+
+    try {
+      // Validate URL format before fetching
+      new URL(url)
+    } catch {
+      return
+    }
+
+    setFetchingTitle(true)
+    try {
+      const res = await fetch(`/api/fetch-title?url=${encodeURIComponent(url)}`)
+      const { title } = await res.json()
+      if (title && !getValues("label")) {
+        setValue("label", title, { shouldValidate: true, shouldDirty: true })
+      }
+    } catch {
+      // silently ignore — user can fill in label manually
+    } finally {
+      setFetchingTitle(false)
+    }
   }
 
   async function onSubmit(data: QrLinkFormData) {
@@ -101,14 +132,24 @@ function CreateQrLinkModal({ visible, onDismiss }: CreateQrLinkModalProps) {
               label="Destination URL"
               errorText={get(errors, "destinationUrl.message")}
             >
-              <CInput control={control} name="destinationUrl" placeholder="https://example.com" />
+              <CInput
+                control={control}
+                name="destinationUrl"
+                placeholder="https://example.com"
+                onBlur={handleUrlBlur}
+              />
             </FormField>
 
             <FormField
-              label={<>Label <i>- optional</i></>}
+              label="Label"
               errorText={get(errors, "label.message")}
             >
-              <CInput control={control} name="label" placeholder="e.g. Summer Campaign" />
+              <CInput
+                control={control}
+                name="label"
+                placeholder={fetchingTitle ? "Fetching page title…" : "e.g. Summer Campaign"}
+                disabled={fetchingTitle}
+              />
             </FormField>
 
             <FormField

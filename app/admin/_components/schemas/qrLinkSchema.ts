@@ -5,7 +5,7 @@ export const qrLinkSchema = z.object({
     .string()
     .min(1, "Destination URL is required")
     .url("Must be a valid HTTP or HTTPS URL"),
-  label: z.string().optional(),
+  label: z.string().min(1, "Label is required"),
   customCode: z
     .string()
     .regex(/^[A-Za-z0-9]{4,6}$/, "Code must be 4–6 alphanumeric characters")

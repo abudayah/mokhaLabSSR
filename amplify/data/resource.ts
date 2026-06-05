@@ -28,6 +28,7 @@ const schema = a.schema({
     })
     .authorization((allow) => [
       allow.authenticated(),
+      allow.publicApiKey().to(["read"]),  // redirect handler needs to look up by code
     ]),
 
   ClickEvent: a
