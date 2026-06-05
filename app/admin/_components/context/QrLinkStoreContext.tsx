@@ -7,12 +7,18 @@ import type { QrLink, ClickEvent } from "@/lib/qr-links"
 import type { QrLinkFormData } from "@/app/admin/_components/schemas/qrLinkSchema"
 import { generateUniqueCode } from "@/app/admin/_components/utils/shortCodeUtils"
 
+export interface UpdateLinkData {
+  destinationUrl: string
+  label: string
+}
+
 export interface QrLinkStoreValue {
   links: QrLink[]
   loading: boolean
   getLinkById: (id: string) => QrLink | undefined
   getLinkByCode: (code: string) => QrLink | undefined
   createLink: (data: QrLinkFormData) => Promise<QrLink>
+  updateLink: (id: string, data: UpdateLinkData) => Promise<void>
   deleteLink: (id: string) => Promise<void>
   fetchClickEvents: (qrLinkId: string) => Promise<ClickEvent[]>
 }
@@ -111,6 +117,18 @@ export function QrLinkStoreProvider({ children }: { children: ReactNode }) {
     return link
   }
 
+  async function updateLink(id: string, data: UpdateLinkData): Promise<void> {
+    const { data: updated, errors } = await client.models.QrLink.update({
+      id,
+      destinationUrl: data.destinationUrl,
+      label: data.label,
+    })
+    if (errors?.length || !updated) {
+      throw new Error(errors?.[0]?.message ?? "Failed to update QR link")
+    }
+    setLinks((prev) => prev.map((l) => (l.id === id ? toQrLink(updated) : l)))
+  }
+
   async function deleteLink(id: string): Promise<void> {
     // Fetch all associated ClickEvent records and delete them first
     const { data: events } = await client.models.ClickEvent.list({
@@ -142,7 +160,7 @@ export function QrLinkStoreProvider({ children }: { children: ReactNode }) {
 
   return (
     <QrLinkStoreContext.Provider
-      value={{ links, loading, getLinkById, getLinkByCode, createLink, deleteLink, fetchClickEvents }}
+      value={{ links, loading, getLinkById, getLinkByCode, createLink, updateLink, deleteLink, fetchClickEvents }}
     >
       {children}
     </QrLinkStoreContext.Provider>

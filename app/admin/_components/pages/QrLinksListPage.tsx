@@ -4,6 +4,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useForm, get } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { z } from "zod"
 import { CInput } from "react-hook-form-cloudscape"
 import Table, { TableProps } from "@cloudscape-design/components/table"
 import Box from "@cloudscape-design/components/box"
@@ -166,6 +167,94 @@ function CreateQrLinkModal({ visible, onDismiss }: CreateQrLinkModalProps) {
   )
 }
 
+// ─── Edit Modal ───────────────────────────────────────────────────────────────
+
+const editSchema = z.object({
+  destinationUrl: z
+    .string()
+    .min(1, "Destination URL is required")
+    .url("Must be a valid HTTP or HTTPS URL"),
+  label: z.string().min(1, "Label is required"),
+})
+
+type EditFormData = z.infer<typeof editSchema>
+
+interface EditQrLinkModalProps {
+  link: QrLink
+  onDismiss: () => void
+}
+
+function EditQrLinkModal({ link, onDismiss }: EditQrLinkModalProps) {
+  const { updateLink } = useQrLinkStore()
+  const { addNotification } = useNotifications()
+
+  const {
+    control,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<EditFormData>({
+    resolver: zodResolver(editSchema),
+    mode: "onBlur",
+    reValidateMode: "onChange",
+    defaultValues: {
+      destinationUrl: link.destinationUrl,
+      label: link.label ?? "",
+    },
+  })
+
+  async function onSubmit(data: EditFormData) {
+    try {
+      await updateLink(link.id, data)
+      addNotification({ type: "success", content: "QR Link updated.", dismissible: true })
+      onDismiss()
+    } catch (err) {
+      addNotification({
+        type: "error",
+        content: err instanceof Error ? err.message : "Failed to update QR link.",
+        dismissible: true,
+      })
+    }
+  }
+
+  return (
+    <Modal
+      visible
+      onDismiss={onDismiss}
+      header="Edit QR Link"
+      footer={
+        <Box float="right">
+          <SpaceBetween direction="horizontal" size="xs">
+            <Button variant="link" formAction="none" onClick={onDismiss}>
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              formAction="submit"
+              form="edit-qr-link-form"
+              loading={isSubmitting}
+            >
+              Save
+            </Button>
+          </SpaceBetween>
+        </Box>
+      }
+    >
+      <form id="edit-qr-link-form" onSubmit={handleSubmit(onSubmit)} noValidate>
+        <Form>
+          <SpaceBetween size="l">
+            <FormField label="Destination URL" errorText={get(errors, "destinationUrl.message")}>
+              <CInput control={control} name="destinationUrl" placeholder="https://example.com" />
+            </FormField>
+            <FormField label="Label" errorText={get(errors, "label.message")}>
+              <CInput control={control} name="label" placeholder="e.g. Summer Campaign" />
+            </FormField>
+          </SpaceBetween>
+        </Form>
+      </form>
+    </Modal>
+  )
+}
+
 // ─── Delete Modal ─────────────────────────────────────────────────────────────
 
 interface DeleteQrLinkModalProps {
@@ -240,6 +329,7 @@ export default function QrLinksListPage() {
   })
   const [sortingDescending, setSortingDescending] = useState(true)
   const [createModalVisible, setCreateModalVisible] = useState(false)
+  const [editTarget, setEditTarget] = useState<QrLink | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<QrLink | null>(null)
 
   const columnDefinitions: TableProps.ColumnDefinition<QrLink>[] = [
@@ -302,22 +392,26 @@ export default function QrLinksListPage() {
       cell: (item) => (
         <SpaceBetween direction="horizontal" size="xs">
           <Button
-            variant="inline-link"
+            variant="inline-icon"
+            iconName="edit"
+            ariaLabel={`Edit ${item.code}`}
+            onClick={() => setEditTarget(item)}
+          />
+          <Button
+            variant="inline-icon"
+            iconName="download"
             ariaLabel={`Download QR code for ${item.code}`}
             onClick={async () => {
               const svg = await generateQrSvg(item.code)
               downloadQrSvg(svg, item.code)
             }}
-          >
-            Download QR Code
-          </Button>
+          />
           <Button
-            variant="inline-link"
+            variant="inline-icon"
+            iconName="remove"
             ariaLabel={`Delete ${item.code}`}
             onClick={() => setDeleteTarget(item)}
-          >
-            Delete
-          </Button>
+          />
         </SpaceBetween>
       ),
     },
@@ -376,6 +470,13 @@ export default function QrLinksListPage() {
         <CreateQrLinkModal
           visible={createModalVisible}
           onDismiss={() => setCreateModalVisible(false)}
+        />
+      )}
+
+      {editTarget && (
+        <EditQrLinkModal
+          link={editTarget}
+          onDismiss={() => setEditTarget(null)}
         />
       )}
 
