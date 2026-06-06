@@ -57,27 +57,22 @@ export function QrLinkStoreProvider({ children }: { children: ReactNode }) {
   const client = useMemo(() => generateClient<Schema>({ authMode: "userPool" }), [])
 
   useEffect(() => {
-    let cancelled = false
-
-    async function load() {
-      try {
-        const { data: items } = await client.models.QrLink.list()
-        if (cancelled) return
-        const mapped = (items ?? [])
+    // Use observeQuery for real-time updates — picks up clickCount/lastClickedAt
+    // changes written by the redirect handler automatically
+    const sub = client.models.QrLink.observeQuery().subscribe({
+      next: ({ items }) => {
+        const mapped = items
           .map(toQrLink)
           .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-        if (!cancelled) setLinks(mapped)
-      } catch (err) {
-        console.error("Failed to load QR links:", err)
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
-    }
-
-    load()
-    return () => {
-      cancelled = true
-    }
+        setLinks(mapped)
+        setLoading(false)
+      },
+      error: (err) => {
+        console.error("QrLink observeQuery error:", err)
+        setLoading(false)
+      },
+    })
+    return () => sub.unsubscribe()
   }, [client])
 
   function getLinkById(id: string): QrLink | undefined {
@@ -89,17 +84,28 @@ export function QrLinkStoreProvider({ children }: { children: ReactNode }) {
   }
 
   async function createLink(data: QrLinkFormData): Promise<QrLink> {
-    // Determine the short code: use customCode if provided, otherwise auto-generate
-    const existingCodes = new Set(links.map((l) => l.code.toUpperCase()))
-    const code =
-      data.customCode && data.customCode.trim() !== ""
-        ? data.customCode
-        : await generateUniqueCode(existingCodes)
+    const existingCodes = new Set(links.map((l) => l.code))
 
-    // Check uniqueness for custom codes
+    let code: string
     if (data.customCode && data.customCode.trim() !== "") {
-      if (existingCodes.has(data.customCode.toUpperCase())) {
+      code = data.customCode.trim()
+      // Verify uniqueness against DynamoDB directly — not just local cache
+      const { data: existing } = await client.models.QrLink.list({
+        filter: { code: { eq: code } },
+      })
+      if (existing?.length) {
         throw new Error("This short code is already in use.")
+      }
+    } else {
+      code = await generateUniqueCode(existingCodes)
+      // Double-check the generated code against DynamoDB
+      const { data: existing } = await client.models.QrLink.list({
+        filter: { code: { eq: code } },
+      })
+      if (existing?.length) {
+        // Collision in DB — try once more with a fresh set
+        const freshCodes = new Set([...existingCodes, code])
+        code = await generateUniqueCode(freshCodes)
       }
     }
 
@@ -112,9 +118,8 @@ export function QrLinkStoreProvider({ children }: { children: ReactNode }) {
     if (errors?.length || !created) {
       throw new Error(errors?.[0]?.message ?? "Failed to create QR link")
     }
-    const link = toQrLink(created)
-    setLinks((prev) => [link, ...prev])
-    return link
+    // observeQuery will update the list automatically
+    return toQrLink(created)
   }
 
   async function updateLink(id: string, data: UpdateLinkData): Promise<void> {
@@ -126,11 +131,10 @@ export function QrLinkStoreProvider({ children }: { children: ReactNode }) {
     if (errors?.length || !updated) {
       throw new Error(errors?.[0]?.message ?? "Failed to update QR link")
     }
-    setLinks((prev) => prev.map((l) => (l.id === id ? toQrLink(updated) : l)))
+    // observeQuery will update the list automatically
   }
 
   async function deleteLink(id: string): Promise<void> {
-    // Fetch all associated ClickEvent records and delete them first
     const { data: events } = await client.models.ClickEvent.list({
       filter: { qrLinkId: { eq: id } },
     })
@@ -139,13 +143,11 @@ export function QrLinkStoreProvider({ children }: { children: ReactNode }) {
         events.map((event) => client.models.ClickEvent.delete({ id: event.id }))
       )
     }
-
-    // Now delete the QrLink itself
     const { errors } = await client.models.QrLink.delete({ id })
     if (errors?.length) {
       throw new Error(errors[0]?.message ?? "Failed to delete QR link")
     }
-    setLinks((prev) => prev.filter((l) => l.id !== id))
+    // observeQuery will update the list automatically
   }
 
   async function fetchClickEvents(qrLinkId: string): Promise<ClickEvent[]> {
