@@ -104,7 +104,7 @@ export function QrLinkStoreProvider({ children }: { children: ReactNode }) {
       })
       if (existing?.length) {
         // Collision in DB — try once more with a fresh set
-        const freshCodes = new Set([...existingCodes, code])
+        const freshCodes = new Set(Array.from(existingCodes).concat(code))
         code = await generateUniqueCode(freshCodes)
       }
     }

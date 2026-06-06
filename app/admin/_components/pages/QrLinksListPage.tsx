@@ -361,7 +361,6 @@ export default function QrLinksListPage() {
       cell: (item) => (
         <ButtonDropdown
           variant="inline-icon"
-          iconName="ellipsis"
           ariaLabel={`Actions for ${item.label ?? item.code}`}
           items={[
             { id: "edit", text: "Edit", iconName: "edit" },

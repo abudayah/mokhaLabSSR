@@ -8,6 +8,7 @@
     "start": "next start",
     "generate:og": "node scripts/generate-og-images.mjs",
     "lint": "next lint",
+    "typecheck": "tsc --noEmit",
     "prepare": "husky"
   },
   "lint-staged": {
