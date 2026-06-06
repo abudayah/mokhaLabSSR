@@ -10,6 +10,7 @@ import Table, { TableProps } from "@cloudscape-design/components/table"
 import Box from "@cloudscape-design/components/box"
 import Button from "@cloudscape-design/components/button"
 import ButtonDropdown from "@cloudscape-design/components/button-dropdown"
+import CopyToClipboard from "@cloudscape-design/components/copy-to-clipboard"
 import Header from "@cloudscape-design/components/header"
 import SpaceBetween from "@cloudscape-design/components/space-between"
 import Modal from "@cloudscape-design/components/modal"
@@ -22,7 +23,7 @@ import { qrLinkSchema } from "@/app/admin/_components/schemas/qrLinkSchema"
 import type { QrLinkFormData } from "@/app/admin/_components/schemas/qrLinkSchema"
 import type { QrLink } from "@/lib/qr-links"
 
-const BASE_URL = "https://www.mokhalab.com"
+const BASE_URL = "https://mokhalab.com"
 const COL_WIDTHS_KEY = "qr-links-table-col-widths"
 
 // ─── Column width persistence ─────────────────────────────────────────────────
@@ -313,14 +314,13 @@ export default function QrLinksListPage() {
       id: "shortLink",
       header: "Short Link",
       cell: (item) => (
-        <a
-          href={`${BASE_URL}/go/${item.code}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{ fontFamily: "monospace", fontSize: "13px" }}
-        >
-          {BASE_URL}/go/{item.code}
-        </a>
+        <CopyToClipboard
+          copyButtonAriaLabel="Copy short link"
+          copyErrorText="Failed to copy"
+          copySuccessText="Copied"
+          textToCopy={`${BASE_URL}/go/${item.code}`}
+          variant="inline"
+        />
       ),
       width: columnWidths["shortLink"],
       minWidth: 200,
@@ -362,6 +362,7 @@ export default function QrLinksListPage() {
         <ButtonDropdown
           variant="inline-icon"
           ariaLabel={`Actions for ${item.label ?? item.code}`}
+          expandToViewport
           items={[
             { id: "edit", text: "Edit", iconName: "edit" },
             { id: "download", text: "Download QR Code", iconName: "download" },

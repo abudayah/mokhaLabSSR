@@ -18,12 +18,15 @@ import Header from "@cloudscape-design/components/header"
 import Modal from "@cloudscape-design/components/modal"
 import PieChart from "@cloudscape-design/components/pie-chart"
 import SpaceBetween from "@cloudscape-design/components/space-between"
+import CopyToClipboard from "@cloudscape-design/components/copy-to-clipboard"
 import Spinner from "@cloudscape-design/components/spinner"
 import { useQrLinkStore } from "@/app/admin/_components/context/useQrLinkStore"
 import { useNotifications } from "@/app/admin/_components/context/NotificationContext"
 import { groupClicksByDay, groupByDeviceType } from "@/app/admin/_components/utils/analyticsUtils"
 import { generateQrSvg, downloadQrSvg } from "@/app/admin/_components/utils/qrCodeUtils"
 import type { ClickEvent, QrLink } from "@/lib/qr-links"
+
+const BASE_URL = "https://mokhalab.com"
 
 // ─── Edit schema ──────────────────────────────────────────────────────────────
 
@@ -232,8 +235,14 @@ export default function QrLinkDetailPage({ id }: { id: string }) {
                   </a>
                 </div>
                 <div>
-                  <Box variant="awsui-key-label">Short Code</Box>
-                  <Box variant="p">{link.code}</Box>
+                  <Box variant="awsui-key-label">Short Link</Box>
+                  <CopyToClipboard
+                    copyButtonAriaLabel="Copy short link"
+                    copyErrorText="Failed to copy"
+                    copySuccessText="Copied"
+                    textToCopy={`${BASE_URL}/go/${link.code}`}
+                    variant="inline"
+                  />
                 </div>
               </SpaceBetween>
               <SpaceBetween size="s">
