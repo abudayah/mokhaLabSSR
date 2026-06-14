@@ -8,7 +8,7 @@ export const qrLinkSchema = z.object({
   label: z.string().min(1, "Label is required"),
   customCode: z
     .string()
-    .regex(/^[A-Za-z0-9]{3,120}$/, "Code must be 3–120 alphanumeric characters")
+    .regex(/^[A-Za-z0-9]{3,120}$/, "Code must be 3–120 alphanumeric characters (stored as lowercase)")
     .optional()
     .or(z.literal("")),
 })

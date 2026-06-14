@@ -88,7 +88,7 @@ export function QrLinkStoreProvider({ children }: { children: ReactNode }) {
 
     let code: string
     if (data.customCode && data.customCode.trim() !== "") {
-      code = data.customCode.trim()
+      code = data.customCode.trim().toLowerCase()
       // Verify uniqueness against DynamoDB directly — not just local cache
       const { data: existing } = await client.models.QrLink.list({
         filter: { code: { eq: code } },

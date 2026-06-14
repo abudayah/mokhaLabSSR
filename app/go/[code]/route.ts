@@ -13,9 +13,10 @@ export async function GET(
 ) {
   const client = generateClient<Schema>() // uses default apiKey auth
 
-  // 1. Look up QrLink by code
+  // 1. Look up QrLink by code (normalize to lowercase for case-insensitive matching)
+  const normalizedCode = params.code.toLowerCase()
   const { data: links } = await client.models.QrLink.list({
-    filter: { code: { eq: params.code } },
+    filter: { code: { eq: normalizedCode } },
   })
   const link = links?.[0]
   if (!link) {

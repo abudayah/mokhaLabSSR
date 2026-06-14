@@ -1,5 +1,5 @@
-const CHARSET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
-const CHARSET_SIZE = CHARSET.length // 62
+const CHARSET = "abcdefghijklmnopqrstuvwxyz0123456789"
+const CHARSET_SIZE = CHARSET.length // 36
 
 const MIN_LEN = 3
 const MAX_LEN = 120
@@ -14,7 +14,7 @@ export function generateShortCode(length = START_LEN): string {
 }
 
 export function validateShortCode(code: string): boolean {
-  return /^[A-Za-z0-9]{3,120}$/.test(code)
+  return /^[a-z0-9]{3,120}$/.test(code)
 }
 
 /**
