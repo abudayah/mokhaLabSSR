@@ -439,7 +439,7 @@ export default function SupportForm() {
     } catch (err) {
       console.error("Support form submission error:", err)
       setSubmitError(
-        "Something went wrong submitting your request. Please try again or email anas@mokhalab.com directly."
+        "Something went wrong submitting your request. Please try again."
       )
     } finally {
       setSubmitting(false)

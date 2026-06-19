@@ -12,10 +12,6 @@ mokhaLab products are designed with restraint: every element that doesn't serve 
 
 - [Blog](https://www.mokhalab.com/blog): Articles on coffee culture, brewing rituals, and the philosophy behind mokhaLab tools
 
-## Contact
-
-- [Contact](https://www.mokhalab.com/#contact): Contact form for inquiries
-
 ## Support
 
 - [Support](https://www.mokhalab.com/support): Customer support portal for inquiries, warranty claims, and product returns

@@ -2,7 +2,6 @@ import { defineBackend } from "@aws-amplify/backend"
 import { auth } from "./auth/resource.js"
 import { data } from "./data/resource.js"
 import { storage } from "./storage/resource.js"
-import { contactFunction } from "./functions/contact/resource.js"
 import { supportFunction } from "./functions/support/resource.js"
 import { PolicyStatement, Effect, AnyPrincipal } from "aws-cdk-lib/aws-iam"
 import {
@@ -16,7 +15,6 @@ const backend = defineBackend({
   auth,
   data,
   storage,
-  contactFunction,
   supportFunction,
 })
 
@@ -42,36 +40,6 @@ bucket.addToResourcePolicy(
     resources: [`${bucket.bucketArn}/blog-images/*`],
   })
 )
-
-// ── Contact API ───────────────────────────────────────────────────────────────
-// Create an HTTP API Gateway that proxies POST /contact to the Lambda function.
-const contactStack = backend.createStack("contact-api-stack")
-
-const contactLambda = backend.contactFunction.resources.lambda
-
-// Grant the Lambda permission to send email via SES
-contactLambda.addToRolePolicy(
-  new PolicyStatement({
-    effect: Effect.ALLOW,
-    actions: ["ses:SendEmail", "ses:SendRawEmail"],
-    resources: ["*"],
-  })
-)
-
-const httpApi = new HttpApi(contactStack, "ContactHttpApi", {
-  apiName: "mokhalab-contact-api",
-  corsPreflight: {
-    allowOrigins: ["*"],
-    allowMethods: [CorsHttpMethod.POST, CorsHttpMethod.OPTIONS],
-    allowHeaders: ["Content-Type"],
-  },
-})
-
-httpApi.addRoutes({
-  path: "/contact",
-  methods: [HttpMethod.POST, HttpMethod.OPTIONS],
-  integration: new HttpLambdaIntegration("ContactIntegration", contactLambda),
-})
 
 // ── Support API ───────────────────────────────────────────────────────────────
 
@@ -104,7 +72,6 @@ supportHttpApi.addRoutes({
 
 backend.addOutput({
   custom: {
-    contactApiUrl: `${httpApi.apiEndpoint}/contact`,
     supportApiUrl: `${supportHttpApi.apiEndpoint}/support`,
   },
 })

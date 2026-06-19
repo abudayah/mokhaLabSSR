@@ -53,12 +53,6 @@ export function SiteHeader() {
               {label}
             </Link>
           ))}
-          <a
-            href="/#contact"
-            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Contact
-          </a>
           <SocialLinks size={18} />
           <CountrySwitcher />
         </nav>
@@ -87,13 +81,6 @@ export function SiteHeader() {
               {label}
             </Link>
           ))}
-          <a
-            href="/#contact"
-            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-            onClick={() => setMobileOpen(false)}
-          >
-            Contact
-          </a>
           <SocialLinks
             size={18}
             className="flex items-center gap-4"

@@ -50,13 +50,6 @@ export default function SupportPage() {
             </h1>
             <p className="text-[17px] text-muted-foreground leading-relaxed">
               Fill out the form below and we&apos;ll get back to you within 24 hours.
-              For urgent matters, email us directly at{" "}
-              <a
-                href="mailto:anas@mokhalab.com"
-                className="text-foreground underline underline-offset-2 hover:opacity-70"
-              >
-                anas@mokhalab.com
-              </a>
             </p>
           </div>
 
