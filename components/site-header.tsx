@@ -15,6 +15,7 @@ export function SiteHeader() {
   const navLinks = [
     { href: "/products", label: "Products" },
     { href: "/blog", label: "Blog" },
+    { href: "/support", label: "Support" },
   ]
 
   return (

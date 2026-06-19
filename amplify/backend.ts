@@ -3,6 +3,7 @@ import { auth } from "./auth/resource.js"
 import { data } from "./data/resource.js"
 import { storage } from "./storage/resource.js"
 import { contactFunction } from "./functions/contact/resource.js"
+import { supportFunction } from "./functions/support/resource.js"
 import { PolicyStatement, Effect, AnyPrincipal } from "aws-cdk-lib/aws-iam"
 import {
   HttpApi,
@@ -16,6 +17,7 @@ const backend = defineBackend({
   data,
   storage,
   contactFunction,
+  supportFunction,
 })
 
 // Allow public (unauthenticated) read access to blog-images/* so the
@@ -71,9 +73,38 @@ httpApi.addRoutes({
   integration: new HttpLambdaIntegration("ContactIntegration", contactLambda),
 })
 
-// Expose the URL so the frontend can read it from amplify_outputs.json
+// ── Support API ───────────────────────────────────────────────────────────────
+
+const supportStack = backend.createStack("support-api-stack")
+const supportLambda = backend.supportFunction.resources.lambda
+
+// Grant SES send permissions
+supportLambda.addToRolePolicy(
+  new PolicyStatement({
+    effect: Effect.ALLOW,
+    actions: ["ses:SendEmail", "ses:SendRawEmail"],
+    resources: ["*"],
+  })
+)
+
+const supportHttpApi = new HttpApi(supportStack, "SupportHttpApi", {
+  apiName: "mokhalab-support-api",
+  corsPreflight: {
+    allowOrigins: ["*"],
+    allowMethods: [CorsHttpMethod.POST, CorsHttpMethod.OPTIONS],
+    allowHeaders: ["Content-Type"],
+  },
+})
+
+supportHttpApi.addRoutes({
+  path: "/support",
+  methods: [HttpMethod.POST, HttpMethod.OPTIONS],
+  integration: new HttpLambdaIntegration("SupportIntegration", supportLambda),
+})
+
 backend.addOutput({
   custom: {
     contactApiUrl: `${httpApi.apiEndpoint}/contact`,
+    supportApiUrl: `${supportHttpApi.apiEndpoint}/support`,
   },
 })

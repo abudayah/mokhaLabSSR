@@ -2,6 +2,7 @@
 
 import { BlogPostStoreProvider } from "./context/BlogPostStoreContext"
 import { QrLinkStoreProvider } from "./context/QrLinkStoreContext"
+import { SupportTicketStoreProvider } from "./context/SupportTicketStoreContext"
 import { NotificationProvider } from "./context/NotificationContext"
 
 /**
@@ -13,7 +14,9 @@ export default function AdminProviders({ children }: { children: React.ReactNode
   return (
     <BlogPostStoreProvider>
       <QrLinkStoreProvider>
-        <NotificationProvider>{children}</NotificationProvider>
+        <SupportTicketStoreProvider>
+          <NotificationProvider>{children}</NotificationProvider>
+        </SupportTicketStoreProvider>
       </QrLinkStoreProvider>
     </BlogPostStoreProvider>
   )

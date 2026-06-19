@@ -1,6 +1,53 @@
 import { type ClientSchema, a, defineData } from "@aws-amplify/backend"
 
 const schema = a.schema({
+  SupportTicket: a
+    .model({
+      // Auto-generated on backend: T-US-001 / T-CA-047
+      ticketId: a.string().required(),
+      // Basic info
+      customerName: a.string().required(),
+      email: a.string().required(),
+      phone: a.string(),
+      country: a.enum(["USA", "Canada"]),
+      state: a.string().required(),
+      // Case type
+      caseType: a.enum(["Inquiry", "Warranty", "Return"]),
+      productName: a.string().required(),
+      amazonPurchase: a.boolean().required(),
+      amazonOrderId: a.string(),
+      purchaseDate: a.string(),
+      issueDescription: a.string().required(),
+      // Return-specific
+      returnReason: a.string(),
+      returnReasonOther: a.string(),
+      // Warranty+Return
+      preferredResolution: a.string(),
+      preferredResolutionOther: a.string(),
+      // Contact preference
+      preferredContact: a.enum(["Email", "Phone"]),
+      // Uploaded photos — stored as comma-separated S3 keys
+      photoKeys: a.string(),
+      // Proof of purchase — single S3 key
+      proofOfPurchaseKey: a.string(),
+      // Timestamps
+      submissionTimestamp: a.string().required(),
+      consentTimestamp: a.string().required(),
+      // Admin fields
+      status: a.enum(["New", "InProgress", "Resolved", "Closed"]),
+      assignedAgent: a.string(),
+      internalNotes: a.string(),
+      // Response log — JSON array stringified
+      responseLog: a.string(),
+      // Call log — JSON array stringified
+      callLog: a.string(),
+    })
+    .authorization((allow) => [
+      allow.authenticated(),
+      // Public API key: write-only (submit form), no read
+      allow.publicApiKey().to(["create"]),
+    ]),
+
   BlogPost: a
     .model({
       slug: a.string().required(),

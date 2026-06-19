@@ -15,3 +15,7 @@ mokhaLab products are designed with restraint: every element that doesn't serve 
 ## Contact
 
 - [Contact](https://www.mokhalab.com/#contact): Contact form for inquiries
+
+## Support
+
+- [Support](https://www.mokhalab.com/support): Customer support portal for inquiries, warranty claims, and product returns

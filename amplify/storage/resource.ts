@@ -9,5 +9,10 @@ export const storage = defineStorage({
       // Public (unauthenticated) can read — needed for public blog pages
       allow.guest.to(["read"]),
     ],
+    // Support ticket uploads — public write (form submissions), admin read/delete
+    "support-uploads/*": [
+      allow.authenticated.to(["read", "write", "delete"]),
+      allow.guest.to(["write"]),
+    ],
   }),
 })
