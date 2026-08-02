@@ -122,6 +122,34 @@ Use the actual filenames found in the folder — do not assume or generate image
 
 ---
 
+## OG Image (required)
+
+Every product **must** have an OG image at:
+
+```
+/public/images/[MODEL-NUMBER]/og.png
+```
+
+This file is used as the Open Graph image for social sharing and is expected at exactly that path by the product page metadata.
+
+**After adding a new product and its images, always run:**
+
+```bash
+node scripts/generate-og-images.mjs
+```
+
+This script composites the product's `main.webp` onto a 1200×630 white canvas and writes `og.png`.
+
+**Before running the script, add the new product to the `productImages` array in `scripts/generate-og-images.mjs`:**
+
+```js
+{ id: "ML-NEW-01", image: "/images/ML-NEW-01/main.webp" },
+```
+
+The script must be kept in sync with `lib/products.ts` — every product in the products array must have a matching entry in the script.
+
+---
+
 ## Full Product Entry Example (with variations)
 
 ```ts
