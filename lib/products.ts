@@ -23,6 +23,47 @@ export interface Product {
 
 export const products: Product[] = [
   {
+    id: "ML-K200",
+    slug: "mini-coffee-scale",
+    name: "Mini Coffee Scale",
+    tagline: "Measure. Time. Repeat. Perfectly.",
+    description:
+      "Every detail of the mokhaLab Mini Coffee Scale is designed to bring greater precision and control to your daily brewing. Weigh coffee and water to 0.1g accuracy while the built-in timer tracks your extraction simultaneously — helping you dial in espresso and refine pour-over recipes with confidence. The compact footprint fits naturally into any setup, and USB-C charging keeps it ready without disposable batteries.",
+    prices: { USD: 0, CAD: 0 },
+    image: "/images/ML-K200/main.webp",
+    images: [
+      "/images/ML-K200/main.webp",
+      "/images/ML-K200/03.webp",
+      "/images/ML-K200/04.webp",      
+      "/images/ML-K200/02.webp",
+      "/images/ML-K200/05.webp",
+    ],
+    amazonUrls: {
+      us: "https://www.amazon.com/dp/B0H8KZS3L8",
+      ca: "https://www.amazon.ca/dp/B0H8KZS3L8",
+    },
+    features: [
+      { icon: "zap", title: "0.1g Precision", description: "Measures in precise 0.1g increments to help you dial in espresso shots and maintain consistent pour-over recipes." },
+      { icon: "circle", title: "Built-In Brew Timer", description: "Track brew time and weight simultaneously to better understand and control your extraction." },
+      { icon: "layers", title: "USB-C Rechargeable", description: "Convenient USB-C charging means no disposable batteries required — always ready for your next brew." },
+      { icon: "check", title: "Compact & Versatile", description: "Mini footprint suits espresso, pour over, French press, and more brewing methods." },
+    ],
+    specs: [
+      { label: "Model", value: "ML-K200" },
+      { label: "Capacity", value: "2kg" },
+      { label: "Precision", value: "0.1g" },
+      { label: "Display", value: "LED" },
+      { label: "Charging", value: "USB-C" },
+      { label: "Color", value: "Black" },
+      { label: "Dimensions", value: "16.26 x 14.48 x 6.35 cm" },
+      { label: "Weight", value: "300g" },
+      { label: "UPC", value: "602835779115" },
+    ],
+    compatibleMachines: ["Universal — suits espresso, pour over, French press, and more"],
+    youtubeId: "",
+    relatedIds: ["ML-FWDT-BLK-01", "ML-WTS-WLN-01", "ML-GAD-BLK-58-01"],
+  },  
+  {
     id: "ML-PIT-BLK-53-01",
     slug: "precision-impact-tamper-53mm",
     name: "Precision Impact Tamper – 53mm",

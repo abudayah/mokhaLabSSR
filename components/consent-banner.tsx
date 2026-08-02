@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { PrivacyPolicyModal } from "@/components/privacy-policy-modal"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -76,6 +77,7 @@ const DEFAULT_MANAGE: ConsentPreferences = {
 export function ConsentBanner() {
   const [visibility, setVisibility] = useState<BannerVisibility>("hidden")
   const [draft, setDraft] = useState<ConsentPreferences>(FULL_DENY)
+  const [privacyOpen, setPrivacyOpen] = useState(false)
 
   // On mount: if consent was already saved, apply it silently; otherwise show banner
   useEffect(() => {
@@ -118,7 +120,11 @@ export function ConsentBanner() {
     }))
   }
 
-  if (visibility === "hidden") return null
+  if (visibility === "hidden") return (
+    <>
+      {privacyOpen && <PrivacyPolicyModal onClose={() => setPrivacyOpen(false)} />}
+    </>
+  )
 
   // ── Manage preferences panel ────────────────────────────────────────────────
   if (visibility === "manage") {
@@ -217,12 +223,12 @@ export function ConsentBanner() {
             serve relevant ads. By clicking{" "}
             <span className="font-medium text-[var(--foreground)]">Accept all</span>, you consent
             to our use of cookies.{" "}
-            <a
-              href="/blog"
+            <button
+              onClick={() => setPrivacyOpen(true)}
               className="underline underline-offset-2 hover:text-[var(--foreground)] transition-colors"
             >
               Privacy policy
-            </a>
+            </button>
           </p>
         </div>
 
