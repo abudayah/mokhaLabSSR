@@ -31,6 +31,7 @@ const productImages = [
   { id: "ML-GAD-BLK-58-01", image: "/images/ML-GAD-BLK-58-01/602835779047.main.webp" },
   { id: "ML-WTS-WLN-01",    image: "/images/ML-WTS-WLN-01/602835779054.main.webp"    },
   { id: "ML-WBT-2PK-01",    image: "/images/ML-WBT-2PK-01/602835779078.main.webp"    },
+  { id: "ML-K200",           image: "/images/ML-K200/main.webp"                       },
 ]
 
 const OG_WIDTH  = 1200
