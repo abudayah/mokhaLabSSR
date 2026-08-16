@@ -2,7 +2,8 @@ import type { Metadata } from "next"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
 import { ProductCard } from "@/components/product/product-card"
-import { products } from "@/lib/products"
+import { getServerClient } from "@/lib/amplify-server-utils"
+import { toProductDB, type ProductDBRaw } from "@/lib/products-db"
 
 export const metadata: Metadata = {
   title: "Products",
@@ -27,7 +28,9 @@ export const metadata: Metadata = {
   },
 }
 
-export default function ProductsListPage() {
+export default async function ProductsListPage() {
+  const { data: items } = await getServerClient().models.Product.list()
+  const products = (items ?? []).map(item => toProductDB(item as unknown as ProductDBRaw))
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <SiteHeader />

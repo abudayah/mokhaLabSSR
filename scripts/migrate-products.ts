@@ -1,6 +1,30 @@
-import { machines53and54, machines58 } from "@/lib/machines"
+/**
+ * scripts/migrate-products.ts
+ *
+ * One-time migration script — seeds DynamoDB with all products that were
+ * previously defined in lib/products.ts (now removed).
+ *
+ * Run with:
+ *   npx tsx scripts/migrate-products.ts
+ *
+ * Requirements: 2.1, 2.2, 2.3, 2.4, 10.9
+ *
+ * Prerequisites:
+ *   - Valid Cognito credentials in the environment (run after `npx ampx sandbox`
+ *     is active or against the deployed backend with appropriate credentials)
+ *   - amplify_outputs.json present at the project root
+ */
 
-export interface Product {
+import { Amplify } from "aws-amplify"
+import { generateClient } from "aws-amplify/data"
+import outputs from "@/amplify_outputs.json"
+import type { Schema } from "@/amplify/data/resource"
+
+// ---------------------------------------------------------------------------
+// Inlined product data (previously in lib/products.ts)
+// ---------------------------------------------------------------------------
+
+interface StaticProduct {
   id: string
   slug: string
   name: string
@@ -21,7 +45,37 @@ export interface Product {
   ratingCount?: number
 }
 
-export const products: Product[] = [
+const machines53and54 = [
+  "La Spaziale LUCCA A53 Mini",
+  "La Spaziale Vivaldi II",
+  "La Spaziale Mini Vivaldi II",
+  "La Spaziale S1 Dream",
+  "Breville Bambino",
+  "Breville Bambino Plus",
+  "Breville Barista Express",
+  "Breville Barista Pro",
+  "Breville Barista Touch",
+  "Breville Infuser",
+  "Breville Duo Temp Pro",
+  "Solis Barista Perfetta Plus",
+]
+
+const machines58 = [
+  "Gaggia Classic Pro",
+  "Rancilio Silvia",
+  "Breville Dual Boiler",
+  "Profitec Go",
+  "Lelit Bianca V3",
+  "Lelit Mara X",
+  "Rocket Appartamento",
+  "La Marzocco Linea Micra",
+  "La Marzocco Linea Mini",
+  "ECM Synchronika",
+  "Decent Espresso DE1",
+  "Turin Legato",
+]
+
+const products: StaticProduct[] = [
   {
     id: "ML-K200",
     slug: "mini-coffee-scale",
@@ -34,7 +88,7 @@ export const products: Product[] = [
     images: [
       "/images/ML-K200/main.webp",
       "/images/ML-K200/03.webp",
-      "/images/ML-K200/04.webp",      
+      "/images/ML-K200/04.webp",
       "/images/ML-K200/02.webp",
       "/images/ML-K200/05.webp",
     ],
@@ -62,7 +116,7 @@ export const products: Product[] = [
     compatibleMachines: ["Universal — suits espresso, pour over, French press, and more"],
     youtubeId: "",
     relatedIds: ["ML-FWDT-BLK-01", "ML-WTS-WLN-01", "ML-GAD-BLK-58-01"],
-  },  
+  },
   {
     id: "ML-PIT-BLK-53-01",
     slug: "precision-impact-tamper-53mm",
@@ -198,7 +252,6 @@ export const products: Product[] = [
     ],
     amazonUrls: {
       us: "https://www.amazon.com/dp/B0GW4B2P46",
-      // ca: "https://www.amazon.ca/dp/B0GW4B2P46",
     },
     features: [
       { icon: "zap", title: "Gravity Adaptive Technology", description: "Self-leveling base automatically adjusts to your coffee dose — no manual height calibration needed." },
@@ -297,18 +350,69 @@ export const products: Product[] = [
   },
 ]
 
-export function getProduct(id: string): Product | undefined {
-  return products.find((p) => p.id === id)
+// ---------------------------------------------------------------------------
+// Migration
+// ---------------------------------------------------------------------------
+
+Amplify.configure(outputs)
+
+const client = generateClient<Schema>({ authMode: "userPool" })
+
+async function main() {
+  let createdCount = 0
+  let skippedCount = 0
+  let errorCount = 0
+
+  for (const product of products) {
+    try {
+      // Check if a Product with the same id already exists (idempotency)
+      const { data: existing } = await client.models.Product.get({ id: product.id })
+
+      if (existing) {
+        console.log(`[SKIP] ${product.id} — already exists`)
+        skippedCount++
+        continue
+      }
+
+      const amazonUrlUS = product.amazonUrls?.us ?? product.amazonUrl ?? undefined
+      const amazonUrlCA = product.amazonUrls?.ca ?? undefined
+      const youtubeId =
+        product.youtubeId && product.youtubeId.trim() !== "" ? product.youtubeId : undefined
+
+      await client.models.Product.create({
+        id: product.id,
+        slug: product.slug,
+        name: product.name,
+        tagline: product.tagline,
+        description: product.description,
+        priceUSD: product.prices.USD,
+        priceCAD: product.prices.CAD,
+        image: product.image,
+        images: product.images,
+        ...(amazonUrlUS !== undefined && { amazonUrlUS }),
+        ...(amazonUrlCA !== undefined && { amazonUrlCA }),
+        availableUS: true,
+        availableCA: true,
+        features: JSON.stringify(product.features),
+        specs: JSON.stringify(product.specs),
+        compatibleMachines: product.compatibleMachines,
+        relatedIds: product.relatedIds,
+        ...(product.variantIds !== undefined && { variantIds: product.variantIds }),
+        ...(youtubeId !== undefined && { youtubeId }),
+        ...(product.rating !== undefined && { rating: product.rating }),
+        ...(product.ratingCount !== undefined && { ratingCount: product.ratingCount }),
+      })
+
+      console.log(`[CREATE] ${product.id} — "${product.name}"`)
+      createdCount++
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      console.error(`[ERROR] ${product.id} — ${message}`)
+      errorCount++
+    }
+  }
+
+  console.log(`\nCreated: ${createdCount} | Skipped: ${skippedCount} | Errors: ${errorCount}`)
 }
 
-export function getProductBySlug(slug: string): Product | undefined {
-  return products.find((p) => p.slug === slug)
-}
-
-export function getRelatedProducts(ids: string[]): Product[] {
-  return ids.map((id) => products.find((p) => p.id === id)).filter(Boolean) as Product[]
-}
-
-export function getVariants(ids: string[]): Product[] {
-  return ids.map((id) => products.find((p) => p.id === id)).filter(Boolean) as Product[]
-}
+main()

@@ -1,13 +1,11 @@
+export const dynamic = "force-dynamic"
+
 import { notFound } from "next/navigation"
 import type { Metadata } from "next"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
-import {
-  products,
-  getProductBySlug,
-  getRelatedProducts,
-  getVariants,
-} from "@/lib/products"
+import { getServerClient } from "@/lib/amplify-server-utils"
+import { toProductDB, type ProductDB, type ProductDBRaw } from "@/lib/products-db"
 import { SITE_URL } from "@/lib/image-url"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
@@ -18,23 +16,41 @@ import { ProductPrice } from "@/components/product/product-price"
 import { ProductRating } from "@/components/product/product-rating"
 import { ProductViewTracker } from "@/components/product/product-view-tracker"
 
-// Pre-render every product page at build time
-export function generateStaticParams() {
-  return products.map((p) => ({ slug: p.slug }))
+// ---------------------------------------------------------------------------
+// Data helpers
+// ---------------------------------------------------------------------------
+
+async function fetchProductBySlug(slug: string): Promise<ProductDB | null> {
+  const client = getServerClient()
+  const { data: items } = await client.models.Product.listProductBySlug({ slug })
+  const raw = items?.[0]
+  return raw ? toProductDB(raw as unknown as ProductDBRaw) : null
 }
 
-export function generateMetadata({
+async function fetchProductsByIds(ids: string[]): Promise<ProductDB[]> {
+  if (!ids.length) return []
+  const client = getServerClient()
+  const results = await Promise.all(ids.map((id) => client.models.Product.get({ id })))
+  return results
+    .map((r) => r.data)
+    .filter(Boolean)
+    .map((raw) => toProductDB(raw as unknown as ProductDBRaw))
+}
+
+// ---------------------------------------------------------------------------
+// Metadata
+// ---------------------------------------------------------------------------
+
+export async function generateMetadata({
   params,
 }: {
   params: { slug: string }
-}): Metadata {
-  const product = getProductBySlug(params.slug)
+}): Promise<Metadata> {
+  const product = await fetchProductBySlug(params.slug)
   if (!product) return { title: "Product not found" }
 
   const description = `${product.tagline} — ${product.description.slice(0, 120)}…`
   const url = `${SITE_URL}/products/${product.slug}`
-
-  // Derive the static OG image path: same folder as the main image, og.png
   const ogImageUrl = `${SITE_URL}${product.image.replace(/\/[^/]+$/, "/og.png")}`
 
   return {
@@ -66,31 +82,31 @@ export function generateMetadata({
   }
 }
 
-// JSON-LD structured data for the product
-function ProductJsonLd({ product }: { product: ReturnType<typeof getProductBySlug> }) {
-  if (!product) return null
+// ---------------------------------------------------------------------------
+// JSON-LD
+// ---------------------------------------------------------------------------
 
+function ProductJsonLd({ product }: { product: ProductDB }) {
   const productUrl = `${SITE_URL}/products/${product.slug}`
 
-  // Build offers array — one per available storefront
   const offers = []
-  if (product.amazonUrls?.us) {
+  if (product.amazonUrlUS) {
     offers.push({
       "@type": "Offer",
-      url: product.amazonUrls.us,
+      url: product.amazonUrlUS,
       priceCurrency: "USD",
-      price: product.prices.USD,
+      price: product.priceUSD,
       itemCondition: "https://schema.org/NewCondition",
       availability: "https://schema.org/InStock",
       seller: { "@type": "Organization", name: "mokhaLab" },
     })
   }
-  if (product.amazonUrls?.ca) {
+  if (product.amazonUrlCA) {
     offers.push({
       "@type": "Offer",
-      url: product.amazonUrls.ca,
+      url: product.amazonUrlCA,
       priceCurrency: "CAD",
-      price: product.prices.CAD,
+      price: product.priceCAD,
       itemCondition: "https://schema.org/NewCondition",
       availability: "https://schema.org/InStock",
       seller: { "@type": "Organization", name: "mokhaLab" },
@@ -106,10 +122,7 @@ function ProductJsonLd({ product }: { product: ReturnType<typeof getProductBySlu
     sku: product.id,
     mpn: product.id,
     image: product.images.map((img) => `${SITE_URL}${img}`),
-    brand: {
-      "@type": "Brand",
-      name: "mokhaLab",
-    },
+    brand: { "@type": "Brand", name: "mokhaLab" },
     aggregateRating: {
       "@type": "AggregateRating",
       ratingValue: product.rating ?? 4.7,
@@ -128,17 +141,31 @@ function ProductJsonLd({ product }: { product: ReturnType<typeof getProductBySlu
   )
 }
 
-export default function ProductPage({ params }: { params: { slug: string } }) {
-  const product = getProductBySlug(params.slug)
+// ---------------------------------------------------------------------------
+// Page
+// ---------------------------------------------------------------------------
+
+export default async function ProductPage({ params }: { params: { slug: string } }) {
+  const product = await fetchProductBySlug(params.slug)
   if (!product) notFound()
 
-  const amazonUrls = product.amazonUrls ?? {
-    us: product.amazonUrl ?? "",
-    ca: product.amazonUrl ?? "",
+  const amazonUrls = {
+    us: product.amazonUrlUS,
+    ca: product.amazonUrlCA,
   }
 
-  const relatedProducts = getRelatedProducts(product.relatedIds)
-  const variants = product.variantIds ? getVariants(product.variantIds) : []
+  const availability = {
+    us: product.availableUS,
+    ca: product.availableCA,
+  }
+
+  const [relatedProducts, variants] = await Promise.all([
+    fetchProductsByIds(product.relatedIds ?? []),
+    fetchProductsByIds(product.variantIds ?? []),
+  ])
+
+  // ProductPrice expects the legacy { USD, CAD } shape — build it from DB fields
+  const prices = { USD: product.priceUSD, CAD: product.priceCAD }
 
   return (
     <>
@@ -178,7 +205,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
                   {product.description}
                 </p>
 
-                <ProductPrice prices={product.prices} />
+                <ProductPrice prices={prices} />
 
                 {/* ── Variant Switcher ───────────────────────── */}
                 {variants.length > 1 && (
@@ -212,9 +239,10 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
                 <div className="flex flex-col gap-3 pt-2">
                   <BuyOnAmazonButton
                     urls={amazonUrls}
+                    availability={availability}
                     productName={product.name}
                     productId={product.id}
-                    prices={product.prices}
+                    prices={prices}
                   />
                   <ShareButton title={product.name} text={product.tagline} />
                 </div>
@@ -332,9 +360,10 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
               </p>
               <BuyOnAmazonButton
                 urls={amazonUrls}
+                availability={availability}
                 productName={product.name}
                 productId={product.id}
-                prices={product.prices}
+                prices={prices}
                 size="lg"
                 align="center"
               />

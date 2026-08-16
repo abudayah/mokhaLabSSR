@@ -6,6 +6,8 @@ import { trackInitiateCheckout } from "@/utils/meta-tracking"
 
 interface BuyOnAmazonButtonProps {
   urls: { us?: string; ca?: string }
+  /** Availability per marketplace — defaults to { us: true, ca: true } for backward compatibility */
+  availability?: { us: boolean; ca: boolean }
   productName?: string
   /** Product id from lib/products.ts — used as content_ids in Meta Pixel events */
   productId?: string
@@ -44,6 +46,7 @@ function trackBuyClick(
 
 export function BuyOnAmazonButton({
   urls,
+  availability = { us: true, ca: true },
   productName,
   productId,
   prices,
@@ -53,33 +56,73 @@ export function BuyOnAmazonButton({
   const { country } = useCountry()
   const isCA = country === "CA"
 
-  const hasCA = Boolean(urls.ca)
-  const hasUS = Boolean(urls.us)
-
-  // Determine which URL to show as primary based on selected country
-  const preferCA = isCA && hasCA
-  const primaryUrl = preferCA ? urls.ca! : urls.us!
-  const primaryLabel = preferCA ? "Buy on Amazon.ca" : "Buy on Amazon.com"
-
-  // Alt link only makes sense when both URLs exist
-  const showAlt = hasCA && hasUS
-  const altUrl = preferCA ? urls.us! : urls.ca!
-  const altLabel = preferCA ? "Amazon.com" : "Amazon.ca"
+  const preferredAvailable = isCA ? availability.ca : availability.us
+  const preferredUrl = isCA ? urls.ca : urls.us
+  const fallbackUrl = isCA ? urls.us : urls.ca
+  const fallbackAvailable = isCA ? availability.us : availability.ca
 
   const iconSize = size === "lg" ? 20 : 18
   const textSize = size === "lg" ? "text-[17px]" : "text-[16px]"
   const padding = size === "lg" ? "px-10 py-4 rounded-[14px]" : "px-8 py-4 rounded-[12px]"
 
-  if (!primaryUrl) return null
+  // Resolve which URL to use (requirements 10.3–10.6)
+  let activeUrl: string | undefined
+  if (!preferredAvailable) {
+    activeUrl = undefined // out of stock
+  } else if (preferredUrl) {
+    activeUrl = preferredUrl
+  } else if (fallbackUrl) {
+    activeUrl = fallbackUrl
+  } else {
+    activeUrl = undefined // no URL at all
+  }
+
+  const activeIsCA = activeUrl ? (activeUrl === urls.ca) : isCA
+  const primaryLabel = activeIsCA ? "Buy on Amazon.ca" : "Buy on Amazon.com"
+
+  // Alt marketplace link: only when preferred is available AND fallback is available AND both URLs exist (requirements 10.7, 10.8)
+  const showAlt = preferredAvailable && fallbackAvailable && Boolean(urls.ca) && Boolean(urls.us)
+  const altUrl = isCA ? urls.us! : urls.ca!
+  const altLabel = isCA ? "Amazon.com" : "Amazon.ca"
+
+  // Out of Stock state (requirement 10.4)
+  if (!preferredAvailable) {
+    return (
+      <div className={`flex flex-col gap-2 ${align === "center" ? "items-center" : "items-start"}`}>
+        <button
+          disabled
+          className={`inline-flex items-center justify-center gap-2 bg-muted text-muted-foreground font-semibold cursor-not-allowed ${textSize} ${padding}`}
+        >
+          <ShoppingBag size={iconSize} aria-hidden="true" />
+          Out of Stock
+        </button>
+      </div>
+    )
+  }
+
+  // No URL available at all — disabled button (requirement 10.6)
+  if (!activeUrl) {
+    return (
+      <div className={`flex flex-col gap-2 ${align === "center" ? "items-center" : "items-start"}`}>
+        <button
+          disabled
+          className={`inline-flex items-center justify-center gap-2 bg-muted text-muted-foreground font-semibold cursor-not-allowed ${textSize} ${padding}`}
+        >
+          <ShoppingBag size={iconSize} aria-hidden="true" />
+          Out of Stock
+        </button>
+      </div>
+    )
+  }
 
   return (
     <div className={`flex flex-col gap-2 ${align === "center" ? "items-center" : "items-start"}`}>
       <a
-        href={primaryUrl}
+        href={activeUrl}
         target="_blank"
         rel="noopener noreferrer"
         onClick={() =>
-          trackBuyClick(productName ?? primaryLabel, primaryUrl, preferCA ? "ca" : "us", productId, prices)
+          trackBuyClick(productName ?? primaryLabel, activeUrl!, activeIsCA ? "ca" : "us", productId, prices)
         }
         className={`inline-flex items-center justify-center gap-2 bg-[#00A8E1] text-white font-semibold hover:opacity-90 active:opacity-80 transition-opacity ${textSize} ${padding}`}
       >
@@ -94,7 +137,7 @@ export function BuyOnAmazonButton({
             target="_blank"
             rel="noopener noreferrer"
             onClick={() =>
-              trackBuyClick(productName ?? altLabel, altUrl, preferCA ? "us" : "ca", productId, prices)
+              trackBuyClick(productName ?? altLabel, altUrl, isCA ? "us" : "ca", productId, prices)
             }
             className="underline underline-offset-2 hover:text-foreground transition-colors"
           >

@@ -190,9 +190,10 @@ export default function BlogListPage() {
       {deleteTarget && (
         <DeleteConfirmModal
           visible={true}
-          postTitle={deleteTarget.title}
+          itemName={deleteTarget.title}
           onConfirm={handleDeleteConfirm}
           onDismiss={() => !deleting && setDeleteTarget(null)}
+          loading={deleting}
         />
       )}
     </ContentLayout>

@@ -4,7 +4,8 @@ import Link from "next/link"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
 import { ProductCard } from "@/components/product/product-card"
-import { products } from "@/lib/products"
+import { getServerClient } from "@/lib/amplify-server-utils"
+import { toProductDB, type ProductDBRaw } from "@/lib/products-db"
 
 export const metadata: Metadata = {
   title: "mokhaLab | Precision Espresso Tools",
@@ -37,7 +38,9 @@ export const metadata: Metadata = {
   },
 }
 
-export default function HomePage() {
+export default async function HomePage() {
+  const { data: items } = await getServerClient().models.Product.list()
+  const products = (items ?? []).map((item) => toProductDB(item as unknown as ProductDBRaw))
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />

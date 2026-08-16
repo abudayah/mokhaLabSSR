@@ -90,6 +90,44 @@ const schema = a.schema({
       allow.authenticated().to(["read", "create", "update", "delete"]),
       allow.publicApiKey().to(["create"]),
     ]),
+
+  Product: a
+    .model({
+      // Identity
+      id: a.id().required(),
+      slug: a.string().required(),
+      name: a.string().required(),
+      tagline: a.string().required(),
+      description: a.string().required(),
+      // Pricing
+      priceUSD: a.float().required(),
+      priceCAD: a.float().required(),
+      // Images
+      image: a.string().required(),
+      images: a.string().array().required(),
+      // Amazon storefronts
+      amazonUrlUS: a.string(),
+      amazonUrlCA: a.string(),
+      // Marketplace availability
+      availableUS: a.boolean().required(),
+      availableCA: a.boolean().required(),
+      // Rich fields — JSON-encoded arrays
+      features: a.string().required(),   // JSON: FeatureItem[]
+      specs: a.string().required(),      // JSON: SpecItem[]
+      // Lists
+      compatibleMachines: a.string().array().required(),
+      relatedIds: a.string().array().required(),
+      variantIds: a.string().array(),
+      // Optional metadata
+      youtubeId: a.string(),
+      rating: a.float(),
+      ratingCount: a.integer(),
+    })
+    .secondaryIndexes((index) => [index("slug")])
+    .authorization((allow) => [
+      allow.authenticated(),
+      allow.publicApiKey().to(["read"]),
+    ]),
 })
 
 export type Schema = ClientSchema<typeof schema>

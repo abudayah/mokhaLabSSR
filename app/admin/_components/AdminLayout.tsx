@@ -22,6 +22,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     if (path.startsWith("/admin/blog")) return "/admin/blog"
     if (path.startsWith("/admin/qr-links")) return "/admin/qr-links"
     if (path.startsWith("/admin/support")) return "/admin/support"
+    if (path.startsWith("/admin/products")) return "/admin/products"
     if (path === "/admin" || path === "/admin/") return "/admin"
     return path
   }
@@ -62,16 +63,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               { type: "link", text: "Blog Posts", href: "/admin/blog" },
               { type: "link", text: "QR Links", href: "/admin/qr-links" },
               { type: "link", text: "Support Tickets", href: "/admin/support" },
-              {
-                type: "link",
-                text: "Products",
-                href: "#",
-                info: (
-                  <span style={{ color: "#aab7b8", fontSize: "12px" }}>
-                    Coming soon
-                  </span>
-                ),
-              },
+              { type: "link", text: "Products", href: "/admin/products" },
             ]}
             onFollow={(e) => {
               e.preventDefault()

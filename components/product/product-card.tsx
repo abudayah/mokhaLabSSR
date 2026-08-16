@@ -1,9 +1,9 @@
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
-import type { Product } from "@/lib/products"
+import type { ProductDB } from "@/lib/products-db"
 
 interface ProductCardProps {
-  product: Product
+  product: ProductDB
 }
 
 export function ProductCard({ product }: ProductCardProps) {
