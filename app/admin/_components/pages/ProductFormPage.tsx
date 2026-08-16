@@ -25,6 +25,7 @@ import { useNotifications } from "@/app/admin/_components/context/NotificationCo
 import { generateSlug } from "@/app/admin/_components/utils/slugUtils"
 import type { ProductDB } from "@/lib/products-db"
 import { machines53and54, machines58 } from "@/lib/machines"
+import ProductImageUploader from "@/app/admin/_components/ProductImageUploader"
 
 // ---------------------------------------------------------------------------
 // toFormData — reverse-maps a ProductDB into ProductFormData defaults
@@ -85,7 +86,6 @@ export default function ProductFormPage({ productId }: ProductFormPageProps) {
   const hasReset = useRef<boolean>(false)
 
   // Local state for "add" inputs in token group sections
-  const [newImageInput, setNewImageInput] = useState("")
   const [newRelatedIdInput, setNewRelatedIdInput] = useState("")
   const [newVariantIdInput, setNewVariantIdInput] = useState("")
 
@@ -379,66 +379,23 @@ export default function ProductFormPage({ productId }: ProductFormPageProps) {
                 Section 3: Images
             ---------------------------------------------------------------- */}
             <Container header={<Header variant="h2">Images</Header>}>
-              <SpaceBetween size="m">
-                {/* Main image */}
-                <FormField
-                  label="Main Image Path"
-                  errorText={get(errors, "image.message")}
-                >
-                  <Controller
-                    name="image"
-                    control={control}
-                    render={({ field }) => (
-                      <Input
-                        value={field.value}
-                        onChange={(e) => field.onChange(e.detail.value)}
-                        onBlur={field.onBlur}
-                        placeholder="/images/product/main.jpg"
-                      />
-                    )}
-                  />
-                </FormField>
-
-                {/* Additional images — string array via Controller */}
-                <FormField
-                  label={<>Additional Images <i>- optional</i></>}
-                  errorText={get(errors, "images.message")}
-                >
-                  <SpaceBetween size="xs">
-                    <SpaceBetween direction="horizontal" size="xs">
-                      <Input
-                        value={newImageInput}
-                        onChange={(e) => setNewImageInput(e.detail.value)}
-                        placeholder="/images/product/angle.jpg"
-                      />
-                      <Button
-                        formAction="none"
-                        onClick={() => {
-                          const val = newImageInput.trim()
-                          if (val) {
-                            setValue("images", [...imagesValue, val])
-                            setNewImageInput("")
-                          }
-                        }}
-                      >
-                        Add
-                      </Button>
-                    </SpaceBetween>
-                    {imagesValue.length > 0 && (
-                      <TokenGroup
-                        items={imagesValue.map((img, i) => ({
-                          label: img,
-                          dismissLabel: `Remove image ${i + 1}`,
-                        }))}
-                        onDismiss={({ detail }) => {
-                          const next = imagesValue.filter((_, i) => i !== detail.itemIndex)
-                          setValue("images", next)
-                        }}
-                      />
-                    )}
-                  </SpaceBetween>
-                </FormField>
-              </SpaceBetween>
+              <FormField errorText={get(errors, "image.message")}>
+                <Controller
+                  name="image"
+                  control={control}
+                  render={({ field }) => (
+                    <ProductImageUploader
+                      images={imagesValue}
+                      mainImage={field.value}
+                      productId={productId}
+                      onChange={(newImages, newMain) => {
+                        field.onChange(newMain)
+                        setValue("images", newImages)
+                      }}
+                    />
+                  )}
+                />
+              </FormField>
             </Container>
 
             {/* ----------------------------------------------------------------
