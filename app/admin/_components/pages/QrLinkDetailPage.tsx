@@ -20,64 +20,120 @@ import PieChart from "@cloudscape-design/components/pie-chart"
 import SpaceBetween from "@cloudscape-design/components/space-between"
 import CopyToClipboard from "@cloudscape-design/components/copy-to-clipboard"
 import Spinner from "@cloudscape-design/components/spinner"
+import KeyValuePairs from "@cloudscape-design/components/key-value-pairs"
+import ProgressBar from "@cloudscape-design/components/progress-bar"
+import Link from "@cloudscape-design/components/link"
 import { useQrLinkStore } from "@/app/admin/_components/context/useQrLinkStore"
 import { useNotifications } from "@/app/admin/_components/context/NotificationContext"
-import { groupClicksByDay, groupByDeviceType } from "@/app/admin/_components/utils/analyticsUtils"
 import { generateQrSvg, downloadQrSvg } from "@/app/admin/_components/utils/qrCodeUtils"
-import type { ClickEvent, QrLink } from "@/lib/qr-links"
+import {
+  type ClickMetricSummary,
+  parseMetricCounter,
+  parseHourDistribution,
+  type QrLink,
+} from "@/lib/qr-links"
 
 const BASE_URL = "https://mokhalab.com"
 
 // ─── Edit schema ──────────────────────────────────────────────────────────────
 
 const editSchema = z.object({
-  destinationUrl: z
-    .string()
-    .min(1, "Destination URL is required")
-    .url("Must be a valid HTTP or HTTPS URL"),
+  destinationUrl: z.string().min(1, "Destination URL is required").url("Must be a valid URL"),
   label: z.string().min(1, "Label is required"),
 })
-
 type EditFormData = z.infer<typeof editSchema>
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const emptyState = (
+  <Box textAlign="center" color="inherit">
+    <b>No data yet</b>
+    <Box variant="p" color="inherit">Click events will appear here after the first scan.</Box>
+  </Box>
+)
+
+function pct(value: number, total: number): number {
+  if (total === 0) return 0
+  return Math.round((value / total) * 100)
+}
+
+/** Aggregates all daily summaries into a single totals object */
+function aggregateSummaries(summaries: ClickMetricSummary[]) {
+  const totals = {
+    totalClicks: 0,
+    uniqueIps: 0,
+    likelyScanClicks: 0,
+    botClicks: 0,
+    mobileClicks: 0,
+    tabletClicks: 0,
+    desktopClicks: 0,
+    unknownClicks: 0,
+    osMap: new Map<string, number>(),
+    browserMap: new Map<string, number>(),
+    sourceMap: new Map<string, number>(),
+    countryMap: new Map<string, number>(),
+    hourMap: new Map<string, number>(),
+  }
+
+  for (const s of summaries) {
+    totals.totalClicks += s.totalClicks
+    totals.uniqueIps += s.uniqueIps
+    totals.likelyScanClicks += s.likelyScanClicks
+    totals.botClicks += s.botClicks
+    totals.mobileClicks += s.mobileClicks
+    totals.tabletClicks += s.tabletClicks
+    totals.desktopClicks += s.desktopClicks
+    totals.unknownClicks += s.unknownClicks
+
+    for (const item of parseMetricCounter(s.topOS)) {
+      totals.osMap.set(item.name, (totals.osMap.get(item.name) ?? 0) + item.count)
+    }
+    for (const item of parseMetricCounter(s.topBrowsers)) {
+      totals.browserMap.set(item.name, (totals.browserMap.get(item.name) ?? 0) + item.count)
+    }
+    for (const item of parseMetricCounter(s.topSources)) {
+      totals.sourceMap.set(item.name, (totals.sourceMap.get(item.name) ?? 0) + item.count)
+    }
+    for (const item of parseMetricCounter(s.topCountries)) {
+      totals.countryMap.set(item.name, (totals.countryMap.get(item.name) ?? 0) + item.count)
+    }
+    for (const { hour, clicks } of parseHourDistribution(s.hourDistribution)) {
+      totals.hourMap.set(hour, (totals.hourMap.get(hour) ?? 0) + clicks)
+    }
+  }
+
+  return totals
+}
+
+function mapToSorted(map: Map<string, number>, topN = 8) {
+  return Array.from(map.entries())
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, topN)
+}
 
 // ─── Edit Modal ───────────────────────────────────────────────────────────────
 
-interface EditQrLinkModalProps {
-  link: QrLink
-  onDismiss: () => void
-}
-
-function EditQrLinkModal({ link, onDismiss }: EditQrLinkModalProps) {
+function EditQrLinkModal({ link, onDismiss }: { link: QrLink; onDismiss: () => void }) {
   const { updateLink } = useQrLinkStore()
   const { addNotification } = useNotifications()
 
-  const {
-    control,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<EditFormData>({
+  const { control, handleSubmit, formState: { errors, isSubmitting } } = useForm<EditFormData>({
     resolver: zodResolver(editSchema),
     mode: "onBlur",
     reValidateMode: "onChange",
-    defaultValues: {
-      destinationUrl: link.destinationUrl,
-      label: link.label ?? "",
-    },
+    defaultValues: { destinationUrl: link.destinationUrl, label: link.label ?? "" },
   })
 
   async function onSubmit(data: EditFormData) {
     try {
       await updateLink(link.id, data)
-      addNotification({
-        type: "success",
-        content: "QR Link updated.",
-        dismissible: true,
-      })
+      addNotification({ type: "success", content: "QR link updated.", dismissible: true })
       onDismiss()
     } catch (err) {
       addNotification({
         type: "error",
-        content: err instanceof Error ? err.message : "Failed to update QR link.",
+        content: err instanceof Error ? err.message : "Failed to update.",
         dismissible: true,
       })
     }
@@ -87,21 +143,12 @@ function EditQrLinkModal({ link, onDismiss }: EditQrLinkModalProps) {
     <Modal
       visible
       onDismiss={onDismiss}
-      header="Edit QR Link"
+      header="Edit QR link"
       footer={
         <Box float="right">
           <SpaceBetween direction="horizontal" size="xs">
-            <Button variant="link" formAction="none" onClick={onDismiss}>
-              Cancel
-            </Button>
-            <Button
-              variant="primary"
-              formAction="submit"
-              form="edit-qr-link-form"
-              loading={isSubmitting}
-            >
-              Save
-            </Button>
+            <Button variant="link" formAction="none" onClick={onDismiss}>Cancel</Button>
+            <Button variant="primary" formAction="submit" form="edit-qr-link-form" loading={isSubmitting}>Save</Button>
           </SpaceBetween>
         </Box>
       }
@@ -109,26 +156,11 @@ function EditQrLinkModal({ link, onDismiss }: EditQrLinkModalProps) {
       <form id="edit-qr-link-form" onSubmit={handleSubmit(onSubmit)} noValidate>
         <Form>
           <SpaceBetween size="l">
-            <FormField
-              label="Destination URL"
-              errorText={get(errors, "destinationUrl.message")}
-            >
-              <CInput
-                control={control}
-                name="destinationUrl"
-                placeholder="https://example.com"
-              />
+            <FormField label="Destination URL" errorText={get(errors, "destinationUrl.message")}>
+              <CInput control={control} name="destinationUrl" placeholder="https://example.com" />
             </FormField>
-
-            <FormField
-              label="Label"
-              errorText={get(errors, "label.message")}
-            >
-              <CInput
-                control={control}
-                name="label"
-                placeholder="e.g. Summer Campaign"
-              />
+            <FormField label="Label" errorText={get(errors, "label.message")}>
+              <CInput control={control} name="label" placeholder="e.g. Summer Campaign" />
             </FormField>
           </SpaceBetween>
         </Form>
@@ -137,34 +169,26 @@ function EditQrLinkModal({ link, onDismiss }: EditQrLinkModalProps) {
   )
 }
 
-// ─── Charts empty state ───────────────────────────────────────────────────────
-
-const emptyState = (
-  <Box textAlign="center" color="inherit">
-    <b>No data</b>
-  </Box>
-)
-
 // ─── Detail Page ──────────────────────────────────────────────────────────────
 
 export default function QrLinkDetailPage({ id }: { id: string }) {
-  const { getLinkById, fetchClickEvents } = useQrLinkStore()
+  const { getLinkById, fetchMetricSummaries } = useQrLinkStore()
   const link = getLinkById(id)
 
-  const [events, setEvents] = useState<ClickEvent[]>([])
-  const [eventsLoading, setEventsLoading] = useState(true)
+  const [summaries, setSummaries] = useState<ClickMetricSummary[]>([])
+  const [metricsLoading, setMetricsLoading] = useState(true)
   const [downloadingQr, setDownloadingQr] = useState(false)
   const [editModalVisible, setEditModalVisible] = useState(false)
 
   useEffect(() => {
     let cancelled = false
-    setEventsLoading(true)
-    fetchClickEvents(id)
-      .then((data) => { if (!cancelled) setEvents(data) })
-      .catch(() => { if (!cancelled) setEvents([]) })
-      .finally(() => { if (!cancelled) setEventsLoading(false) })
+    setMetricsLoading(true)
+    fetchMetricSummaries(id)
+      .then((data) => { if (!cancelled) setSummaries(data) })
+      .catch(() => { if (!cancelled) setSummaries([]) })
+      .finally(() => { if (!cancelled) setMetricsLoading(false) })
     return () => { cancelled = true }
-  }, [id, fetchClickEvents])
+  }, [id, fetchMetricSummaries])
 
   async function handleDownloadQr() {
     if (!link) return
@@ -179,21 +203,46 @@ export default function QrLinkDetailPage({ id }: { id: string }) {
 
   if (!link) {
     return (
-      <ContentLayout header={<Header variant="h1">QR Link Detail</Header>}>
-        <Alert type="error">QR Link not found.</Alert>
+      <ContentLayout header={<Header variant="h1">QR Link</Header>}>
+        <Alert type="error">QR link not found.</Alert>
       </ContentLayout>
     )
   }
 
   const label = link.label ?? link.code
   const formattedDate = new Date(link.createdAt).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
+    year: "numeric", month: "long", day: "numeric",
   })
+  const formattedLastClick = link.lastClickedAt
+    ? new Date(link.lastClickedAt).toLocaleString("en-US", {
+        year: "numeric", month: "short", day: "numeric",
+        hour: "2-digit", minute: "2-digit",
+      })
+    : "Never"
 
-  const clicksByDay = eventsLoading ? [] : groupClicksByDay(events)
-  const deviceBreakdown = eventsLoading ? [] : groupByDeviceType(events)
+  // Aggregated totals across all days
+  const totals = aggregateSummaries(summaries)
+  const realClicks = totals.totalClicks - totals.botClicks
+
+  // Daily clicks series for bar chart
+  const dailySeries = summaries.map((s) => ({ x: s.dateKey, y: s.totalClicks }))
+
+  // Device breakdown for pie
+  const deviceData = [
+    { title: "Mobile", value: totals.mobileClicks },
+    { title: "Desktop", value: totals.desktopClicks },
+    { title: "Tablet", value: totals.tabletClicks },
+    { title: "Unknown", value: totals.unknownClicks },
+  ].filter((d) => d.value > 0)
+
+  const topOS = mapToSorted(totals.osMap)
+  const topBrowsers = mapToSorted(totals.browserMap)
+  const topSources = mapToSorted(totals.sourceMap)
+  const topCountries = mapToSorted(totals.countryMap)
+  const hourDist = Array.from({ length: 24 }, (_, i) => {
+    const hour = String(i).padStart(2, "0")
+    return { x: `${hour}:00`, y: totals.hourMap.get(hour) ?? 0 }
+  })
 
   return (
     <>
@@ -203,18 +252,9 @@ export default function QrLinkDetailPage({ id }: { id: string }) {
             variant="h1"
             actions={
               <SpaceBetween direction="horizontal" size="xs">
-                <Button
-                  variant="normal"
-                  onClick={() => setEditModalVisible(true)}
-                >
-                  Edit
-                </Button>
-                <Button
-                  variant="primary"
-                  loading={downloadingQr}
-                  onClick={handleDownloadQr}
-                >
-                  Download QR Code
+                <Button onClick={() => setEditModalVisible(true)}>Edit</Button>
+                <Button variant="primary" loading={downloadingQr} onClick={handleDownloadQr}>
+                  Download QR code
                 </Button>
               </SpaceBetween>
             }
@@ -224,57 +264,71 @@ export default function QrLinkDetailPage({ id }: { id: string }) {
         }
       >
         <SpaceBetween size="l">
-          {/* Metadata */}
+          {/* ── Details ─────────────────────────────────────────── */}
           <Container header={<Header variant="h2">Details</Header>}>
-            <ColumnLayout columns={2} variant="text-grid">
-              <SpaceBetween size="s">
-                <div>
-                  <Box variant="awsui-key-label">Destination URL</Box>
-                  <a href={link.destinationUrl} target="_blank" rel="noopener noreferrer">
-                    {link.destinationUrl}
-                  </a>
-                </div>
-                <div>
-                  <Box variant="awsui-key-label">Short Link</Box>
-                  <CopyToClipboard
-                    copyButtonAriaLabel="Copy short link"
-                    copyErrorText="Failed to copy"
-                    copySuccessText="Copied"
-                    textToCopy={`${BASE_URL}/go/${link.code}`}
-                    variant="inline"
-                  />
-                </div>
-              </SpaceBetween>
-              <SpaceBetween size="s">
-                <div>
-                  <Box variant="awsui-key-label">Total Clicks</Box>
-                  <Box variant="p">{link.clickCount}</Box>
-                </div>
-                <div>
-                  <Box variant="awsui-key-label">Created</Box>
-                  <Box variant="p">{formattedDate}</Box>
-                </div>
-              </SpaceBetween>
-            </ColumnLayout>
+            <KeyValuePairs
+              columns={3}
+              items={[
+                {
+                  label: "Short link",
+                  value: (
+                    <CopyToClipboard
+                      copyButtonAriaLabel="Copy short link"
+                      copyErrorText="Failed to copy"
+                      copySuccessText="Copied"
+                      textToCopy={`${BASE_URL}/go/${link.code}`}
+                      variant="inline"
+                    />
+                  ),
+                },
+                {
+                  label: "Destination",
+                  value: <Link href={link.destinationUrl} external>{link.destinationUrl}</Link>,
+                },
+                { label: "Created", value: formattedDate },
+                { label: "Total clicks", value: String(link.clickCount) },
+                { label: "Last click", value: formattedLastClick },
+                { label: "Likely scans", value: metricsLoading ? "—" : String(totals.likelyScanClicks) },
+              ]}
+            />
           </Container>
 
-          {/* Clicks Over Time */}
-          <Container header={<Header variant="h2">Clicks Over Time</Header>}>
-            {eventsLoading ? (
-              <Box textAlign="center" padding="l">
-                <Spinner size="large" />
-              </Box>
+          {/* ── Summary stats ────────────────────────────────────── */}
+          {!metricsLoading && summaries.length > 0 && (
+            <Container header={<Header variant="h2">All-time summary</Header>}>
+              <ColumnLayout columns={4} variant="text-grid">
+                <div>
+                  <Box variant="awsui-key-label">Total clicks</Box>
+                  <Box variant="h1" fontSize="display-l" fontWeight="bold">{totals.totalClicks.toLocaleString()}</Box>
+                </div>
+                <div>
+                  <Box variant="awsui-key-label">Unique visitors (est.)</Box>
+                  <Box variant="h1" fontSize="display-l" fontWeight="bold">{totals.uniqueIps.toLocaleString()}</Box>
+                </div>
+                <div>
+                  <Box variant="awsui-key-label">Physical QR scans</Box>
+                  <Box variant="h1" fontSize="display-l" fontWeight="bold">{totals.likelyScanClicks.toLocaleString()}</Box>
+                  <Box variant="small" color="text-body-secondary">
+                    {pct(totals.likelyScanClicks, realClicks)}% of real traffic
+                  </Box>
+                </div>
+                <div>
+                  <Box variant="awsui-key-label">Bot traffic filtered</Box>
+                  <Box variant="h1" fontSize="display-l" fontWeight="bold">{totals.botClicks.toLocaleString()}</Box>
+                </div>
+              </ColumnLayout>
+            </Container>
+          )}
+
+          {/* ── Clicks over time ─────────────────────────────────── */}
+          <Container header={<Header variant="h2">Clicks over time</Header>}>
+            {metricsLoading ? (
+              <Box textAlign="center" padding="l"><Spinner size="large" /></Box>
             ) : (
               <BarChart
-                series={[
-                  {
-                    title: "Clicks",
-                    type: "bar",
-                    data: clicksByDay.map((d) => ({ x: d.date, y: d.count })),
-                  },
-                ]}
-                xDomain={clicksByDay.map((d) => d.date)}
-                yDomain={[0, Math.max(1, ...clicksByDay.map((d) => d.count))]}
+                series={[{ title: "Clicks", type: "bar", data: dailySeries }]}
+                xDomain={dailySeries.map((d) => d.x)}
+                yDomain={[0, Math.max(1, ...dailySeries.map((d) => d.y))]}
                 xTitle="Date"
                 yTitle="Clicks"
                 statusType="finished"
@@ -283,7 +337,7 @@ export default function QrLinkDetailPage({ id }: { id: string }) {
                 i18nStrings={{
                   xTickFormatter: (v) => String(v),
                   yTickFormatter: (v) => String(v),
-                  filterLabel: "Filter displayed data",
+                  filterLabel: "Filter data",
                   filterPlaceholder: "Filter data",
                   filterSelectedAriaLabel: "selected",
                   legendAriaLabel: "Legend",
@@ -295,39 +349,159 @@ export default function QrLinkDetailPage({ id }: { id: string }) {
             )}
           </Container>
 
-          {/* Device Type Breakdown */}
-          <Container header={<Header variant="h2">Device Type Breakdown</Header>}>
-            {eventsLoading ? (
-              <Box textAlign="center" padding="l">
-                <Spinner size="large" />
-              </Box>
-            ) : (
-              <PieChart
-                data={deviceBreakdown
-                  .filter((d) => d.count > 0)
-                  .map((d) => ({ title: d.type, value: d.count }))}
+          {/* ── Hour of day heatmap ───────────────────────────────── */}
+          {!metricsLoading && summaries.length > 0 && (
+            <Container header={<Header variant="h2">Click distribution by hour (UTC)</Header>}>
+              <BarChart
+                series={[{ title: "Clicks", type: "bar", data: hourDist }]}
+                xDomain={hourDist.map((d) => d.x)}
+                yDomain={[0, Math.max(1, ...hourDist.map((d) => d.y))]}
+                xTitle="Hour (UTC)"
+                yTitle="Clicks"
                 statusType="finished"
                 empty={emptyState}
                 noMatch={emptyState}
                 i18nStrings={{
-                  filterLabel: "Filter displayed data",
+                  xTickFormatter: (v) => String(v),
+                  yTickFormatter: (v) => String(v),
+                  filterLabel: "Filter data",
                   filterPlaceholder: "Filter data",
                   filterSelectedAriaLabel: "selected",
                   legendAriaLabel: "Legend",
-                  chartAriaRoleDescription: "pie chart",
-                  segmentAriaRoleDescription: "segment",
+                  chartAriaRoleDescription: "bar chart",
+                  xAxisAriaRoleDescription: "x axis",
+                  yAxisAriaRoleDescription: "y axis",
                 }}
               />
-            )}
-          </Container>
+            </Container>
+          )}
+
+          {/* ── Device + Sources ─────────────────────────────────── */}
+          <ColumnLayout columns={2}>
+            <Container header={<Header variant="h2">Device type</Header>}>
+              {metricsLoading ? (
+                <Box textAlign="center" padding="l"><Spinner size="large" /></Box>
+              ) : (
+                <PieChart
+                  data={deviceData}
+                  statusType="finished"
+                  empty={emptyState}
+                  noMatch={emptyState}
+                  i18nStrings={{
+                    filterLabel: "Filter data",
+                    filterPlaceholder: "Filter data",
+                    filterSelectedAriaLabel: "selected",
+                    legendAriaLabel: "Legend",
+                    chartAriaRoleDescription: "pie chart",
+                    segmentAriaRoleDescription: "segment",
+                  }}
+                />
+              )}
+            </Container>
+
+            <Container header={<Header variant="h2">Traffic sources</Header>}>
+              {metricsLoading ? (
+                <Box textAlign="center" padding="l"><Spinner size="large" /></Box>
+              ) : topSources.length === 0 ? (
+                emptyState
+              ) : (
+                <SpaceBetween size="s">
+                  {topSources.map((item) => (
+                    <div key={item.name}>
+                      <SpaceBetween direction="horizontal" size="xs" alignItems="center">
+                        <Box variant="small">{item.name}</Box>
+                        <Box variant="small" color="text-body-secondary">{item.count.toLocaleString()}</Box>
+                      </SpaceBetween>
+                      <ProgressBar
+                        value={pct(item.count, totals.totalClicks)}
+                        label=""
+                        additionalInfo={`${pct(item.count, totals.totalClicks)}%`}
+                      />
+                    </div>
+                  ))}
+                </SpaceBetween>
+              )}
+            </Container>
+          </ColumnLayout>
+
+          {/* ── OS + Browsers ────────────────────────────────────── */}
+          <ColumnLayout columns={2}>
+            <Container header={<Header variant="h2">Operating systems</Header>}>
+              {metricsLoading ? (
+                <Box textAlign="center" padding="l"><Spinner size="large" /></Box>
+              ) : topOS.length === 0 ? (
+                emptyState
+              ) : (
+                <SpaceBetween size="s">
+                  {topOS.map((item) => (
+                    <div key={item.name}>
+                      <SpaceBetween direction="horizontal" size="xs" alignItems="center">
+                        <Box variant="small">{item.name}</Box>
+                        <Box variant="small" color="text-body-secondary">{item.count.toLocaleString()}</Box>
+                      </SpaceBetween>
+                      <ProgressBar
+                        value={pct(item.count, realClicks)}
+                        label=""
+                        additionalInfo={`${pct(item.count, realClicks)}%`}
+                      />
+                    </div>
+                  ))}
+                </SpaceBetween>
+              )}
+            </Container>
+
+            <Container header={<Header variant="h2">Browsers</Header>}>
+              {metricsLoading ? (
+                <Box textAlign="center" padding="l"><Spinner size="large" /></Box>
+              ) : topBrowsers.length === 0 ? (
+                emptyState
+              ) : (
+                <SpaceBetween size="s">
+                  {topBrowsers.map((item) => (
+                    <div key={item.name}>
+                      <SpaceBetween direction="horizontal" size="xs" alignItems="center">
+                        <Box variant="small">{item.name}</Box>
+                        <Box variant="small" color="text-body-secondary">{item.count.toLocaleString()}</Box>
+                      </SpaceBetween>
+                      <ProgressBar
+                        value={pct(item.count, realClicks)}
+                        label=""
+                        additionalInfo={`${pct(item.count, realClicks)}%`}
+                      />
+                    </div>
+                  ))}
+                </SpaceBetween>
+              )}
+            </Container>
+          </ColumnLayout>
+
+          {/* ── Countries ────────────────────────────────────────── */}
+          {!metricsLoading && topCountries.length > 0 && (
+            <Container header={<Header variant="h2">Countries</Header>}>
+              <ColumnLayout columns={2}>
+                <SpaceBetween size="s">
+                  {topCountries.map((item) => (
+                    <div key={item.name}>
+                      <SpaceBetween direction="horizontal" size="xs" alignItems="center">
+                        <Box variant="small">{item.name}</Box>
+                        <Box variant="small" color="text-body-secondary">{item.count.toLocaleString()}</Box>
+                      </SpaceBetween>
+                      <ProgressBar
+                        value={pct(item.count, totals.totalClicks)}
+                        label=""
+                        additionalInfo={`${pct(item.count, totals.totalClicks)}%`}
+                      />
+                    </div>
+                  ))}
+                </SpaceBetween>
+              </ColumnLayout>
+            </Container>
+          )}
         </SpaceBetween>
       </ContentLayout>
 
       {editModalVisible && (
-        <EditQrLinkModal
-          link={link}
-          onDismiss={() => setEditModalVisible(false)}
-        />
+        <EditQrLinkModal link={link} onDismiss={() => setEditModalVisible(false)} />
       )}
     </>
   )

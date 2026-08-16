@@ -3,7 +3,7 @@
 import { createContext, useState, useEffect, useMemo, ReactNode } from "react"
 import { generateClient } from "aws-amplify/data"
 import type { Schema } from "@/amplify/data/resource"
-import type { QrLink, ClickEvent } from "@/lib/qr-links"
+import type { QrLink, ClickEvent, ClickMetricSummary } from "@/lib/qr-links"
 import type { QrLinkFormData } from "@/app/admin/_components/schemas/qrLinkSchema"
 import { generateUniqueCode } from "@/app/admin/_components/utils/shortCodeUtils"
 
@@ -21,6 +21,9 @@ export interface QrLinkStoreValue {
   updateLink: (id: string, data: UpdateLinkData) => Promise<void>
   deleteLink: (id: string) => Promise<void>
   fetchClickEvents: (qrLinkId: string) => Promise<ClickEvent[]>
+  fetchMetricSummaries: (qrLinkId: string) => Promise<ClickMetricSummary[]>
+  /** Fetches all ClickMetricSummary records for the past `days` days (default 7) across all links */
+  fetchRecentMetricSummaries: (days?: number) => Promise<ClickMetricSummary[]>
 }
 
 const QrLinkStoreContext = createContext<QrLinkStoreValue | null>(null)
@@ -160,9 +163,82 @@ export function QrLinkStoreProvider({ children }: { children: ReactNode }) {
     return (items ?? []).map(toClickEvent)
   }
 
+  async function fetchMetricSummaries(qrLinkId: string): Promise<ClickMetricSummary[]> {
+    const { data: items, errors } = await client.models.ClickMetricSummary.listClickMetricSummaryByQrLinkId({
+      qrLinkId,
+    })
+    if (errors?.length) {
+      throw new Error(errors[0]?.message ?? "Failed to fetch metric summaries")
+    }
+    return (items ?? []).map((item) => ({
+      id: item.id,
+      qrLinkId: item.qrLinkId,
+      dateKey: item.dateKey,
+      totalClicks: item.totalClicks ?? 0,
+      uniqueIps: item.uniqueIps ?? 0,
+      likelyScanClicks: item.likelyScanClicks ?? 0,
+      botClicks: item.botClicks ?? 0,
+      mobileClicks: item.mobileClicks ?? 0,
+      tabletClicks: item.tabletClicks ?? 0,
+      desktopClicks: item.desktopClicks ?? 0,
+      unknownClicks: item.unknownClicks ?? 0,
+      topOS: item.topOS ?? null,
+      topBrowsers: item.topBrowsers ?? null,
+      topSources: item.topSources ?? null,
+      topCountries: item.topCountries ?? null,
+      hourDistribution: item.hourDistribution ?? null,
+    })).sort((a, b) => a.dateKey.localeCompare(b.dateKey))
+  }
+
+  async function fetchRecentMetricSummaries(days = 7): Promise<ClickMetricSummary[]> {
+    // Build the date range for the past N days
+    const dates: string[] = []
+    for (let i = days - 1; i >= 0; i--) {
+      const d = new Date()
+      d.setUTCDate(d.getUTCDate() - i)
+      dates.push(d.toISOString().slice(0, 10))
+    }
+    const since = dates[0]
+
+    // Fetch summaries for each link in parallel, filter by date range
+    const allLinks = links
+    if (allLinks.length === 0) return []
+
+    const results = await Promise.all(
+      allLinks.map((link) =>
+        client.models.ClickMetricSummary.listClickMetricSummaryByQrLinkId({
+          qrLinkId: link.id,
+        }).then((res) => res.data ?? [])
+      )
+    )
+
+    const flat = results.flat()
+    return flat
+      .filter((item) => item.dateKey >= since)
+      .map((item) => ({
+        id: item.id,
+        qrLinkId: item.qrLinkId,
+        dateKey: item.dateKey,
+        totalClicks: item.totalClicks ?? 0,
+        uniqueIps: item.uniqueIps ?? 0,
+        likelyScanClicks: item.likelyScanClicks ?? 0,
+        botClicks: item.botClicks ?? 0,
+        mobileClicks: item.mobileClicks ?? 0,
+        tabletClicks: item.tabletClicks ?? 0,
+        desktopClicks: item.desktopClicks ?? 0,
+        unknownClicks: item.unknownClicks ?? 0,
+        topOS: item.topOS ?? null,
+        topBrowsers: item.topBrowsers ?? null,
+        topSources: item.topSources ?? null,
+        topCountries: item.topCountries ?? null,
+        hourDistribution: item.hourDistribution ?? null,
+      }))
+      .sort((a, b) => a.dateKey.localeCompare(b.dateKey))
+  }
+
   return (
     <QrLinkStoreContext.Provider
-      value={{ links, loading, getLinkById, getLinkByCode, createLink, updateLink, deleteLink, fetchClickEvents }}
+      value={{ links, loading, getLinkById, getLinkByCode, createLink, updateLink, deleteLink, fetchClickEvents, fetchMetricSummaries, fetchRecentMetricSummaries }}
     >
       {children}
     </QrLinkStoreContext.Provider>

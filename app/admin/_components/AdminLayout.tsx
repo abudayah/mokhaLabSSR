@@ -17,7 +17,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const router = useRouter()
   const pathname = usePathname()
 
-  // Match /admin/blog and sub-routes (edit, new) to the Blog Posts nav item
   function getActiveHref(path: string): string {
     if (path.startsWith("/admin/blog")) return "/admin/blog"
     if (path.startsWith("/admin/qr-links")) return "/admin/qr-links"
@@ -45,6 +44,13 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           utilities={[
             {
               type: "button",
+              text: "View site",
+              href: "/",
+              external: true,
+              externalIconAriaLabel: "Opens in a new tab",
+            },
+            {
+              type: "button",
               text: "Sign out",
               onClick: handleSignOut,
             },
@@ -61,10 +67,23 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             activeHref={activeHref}
             items={[
               { type: "link", text: "Dashboard", href: "/admin" },
-              { type: "link", text: "Blog Posts", href: "/admin/blog" },
-              { type: "link", text: "QR Links", href: "/admin/qr-links" },
-              { type: "link", text: "Support Tickets", href: "/admin/support" },
-              { type: "link", text: "Products", href: "/admin/products" },
+              { type: "divider" },
+              {
+                type: "section-group",
+                title: "Content",
+                items: [
+                  { type: "link", text: "Blog Posts", href: "/admin/blog" },
+                  { type: "link", text: "Products", href: "/admin/products" },
+                ],
+              },
+              {
+                type: "section-group",
+                title: "Tools",
+                items: [
+                  { type: "link", text: "QR Links", href: "/admin/qr-links" },
+                  { type: "link", text: "Support Tickets", href: "/admin/support" },
+                ],
+              },
             ]}
             onFollow={(e) => {
               e.preventDefault()

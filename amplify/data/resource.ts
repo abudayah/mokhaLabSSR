@@ -85,10 +85,54 @@ const schema = a.schema({
       userAgent: a.string(),
       ip: a.string(),
       referer: a.string(),
+      // Set by the metrics processor after this event has been aggregated
+      processedAt: a.string(),
     })
     .authorization((allow) => [
       allow.authenticated().to(["read", "create", "update", "delete"]),
       allow.publicApiKey().to(["create"]),
+    ]),
+
+  /**
+   * Daily aggregated metrics per QR link.
+   * Upserted in real-time by the redirect route handler on every click.
+   * dateKey format: "YYYY-MM-DD" (UTC date of the clicks).
+   */
+  ClickMetricSummary: a
+    .model({
+      qrLinkId: a.string().required(),
+      dateKey: a.string().required(),        // "2026-08-16"
+      // Volume
+      totalClicks: a.integer().required(),
+      uniqueIps: a.integer().required(),     // distinct IPs for the day (approx unique visitors)
+      likelyScanClicks: a.integer().required(), // mobile + no referer → physical QR scan
+      botClicks: a.integer().required(),     // filtered bot traffic
+      // Device breakdown
+      mobileClicks: a.integer().required(),
+      tabletClicks: a.integer().required(),
+      desktopClicks: a.integer().required(),
+      unknownClicks: a.integer().required(),
+      // OS breakdown — JSON: Array<{ os: string; count: number }>
+      topOS: a.string(),
+      // Browser breakdown — JSON: Array<{ browser: string; count: number }>
+      topBrowsers: a.string(),
+      // Traffic sources — JSON: Array<{ source: string; count: number }>
+      topSources: a.string(),
+      // Country breakdown — JSON: Array<{ country: string; count: number }>
+      topCountries: a.string(),
+      // Hour-of-day distribution — JSON: Record<"00"-"23", number>
+      hourDistribution: a.string(),
+      // Comma-separated list of unique IPs seen today (for dedup; trimmed to 500 chars max)
+      seenIps: a.string(),
+    })
+    .secondaryIndexes((index) => [
+      index("qrLinkId"),
+      index("dateKey"),
+    ])
+    .authorization((allow) => [
+      allow.authenticated().to(["read", "create", "update", "delete"]),
+      // redirect handler (API key) needs to write summaries
+      allow.publicApiKey().to(["create", "update"]),
     ]),
 
   Product: a
