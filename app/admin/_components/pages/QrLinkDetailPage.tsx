@@ -224,8 +224,46 @@ export default function QrLinkDetailPage({ id }: { id: string }) {
   const totals = aggregateSummaries(summaries)
   const realClicks = totals.totalClicks - totals.botClicks
 
-  // Daily clicks series for bar chart
-  const dailySeries = summaries.map((s) => ({ x: s.dateKey, y: s.totalClicks }))
+  // Build per-country per-day series for the "Clicks over time" chart
+  // countryByDay: Map<country, Map<dateKey, count>>
+  const countryByDay = new Map<string, Map<string, number>>()
+  for (const s of summaries) {
+    for (const item of parseMetricCounter(s.topCountries)) {
+      if (!countryByDay.has(item.name)) countryByDay.set(item.name, new Map())
+      const dayMap = countryByDay.get(item.name)!
+      dayMap.set(s.dateKey, (dayMap.get(s.dateKey) ?? 0) + item.count)
+    }
+  }
+
+  // All date keys sorted ascending
+  const allDates = summaries.map((s) => s.dateKey).sort()
+
+  // Country series — sorted by total desc, top 8
+  const countrySeries = Array.from(countryByDay.entries())
+    .map(([country, dayMap]) => ({
+      country,
+      total: Array.from(dayMap.values()).reduce((s, v) => s + v, 0),
+      dayMap,
+    }))
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 8)
+    .map(({ country, dayMap }) => ({
+      title: country,
+      type: "bar" as const,
+      data: allDates.map((d) => ({ x: d, y: dayMap.get(d) ?? 0 })),
+    }))
+
+  // Fallback: single "Unknown" series using total daily clicks
+  const clicksOverTimeSeries =
+    countrySeries.length > 0
+      ? countrySeries
+      : [
+          {
+            title: "Unknown",
+            type: "bar" as const,
+            data: summaries.map((s) => ({ x: s.dateKey, y: s.totalClicks })),
+          },
+        ]
 
   // Device breakdown for pie
   const deviceData = [
@@ -320,26 +358,25 @@ export default function QrLinkDetailPage({ id }: { id: string }) {
             </Container>
           )}
 
-          {/* ── Clicks over time ─────────────────────────────────── */}
+          {/* ── Clicks over time (stacked by country) ────────────── */}
           <Container header={<Header variant="h2">Clicks over time</Header>}>
             {metricsLoading ? (
               <Box textAlign="center" padding="l"><Spinner size="large" /></Box>
             ) : (
               <BarChart
-                series={[{ title: "Clicks", type: "bar", data: dailySeries }]}
-                xDomain={dailySeries.map((d) => d.x)}
-                yDomain={[0, Math.max(1, ...dailySeries.map((d) => d.y))]}
+                series={clicksOverTimeSeries}
+                xDomain={allDates}
+                yDomain={[0, Math.max(1, ...summaries.map((s) => s.totalClicks))]}
                 xTitle="Date"
                 yTitle="Clicks"
+                stackedBars={countrySeries.length > 1}
+                hideFilter
                 statusType="finished"
                 empty={emptyState}
                 noMatch={emptyState}
                 i18nStrings={{
                   xTickFormatter: (v) => String(v),
                   yTickFormatter: (v) => String(v),
-                  filterLabel: "Filter data",
-                  filterPlaceholder: "Filter data",
-                  filterSelectedAriaLabel: "selected",
                   legendAriaLabel: "Legend",
                   chartAriaRoleDescription: "bar chart",
                   xAxisAriaRoleDescription: "x axis",
@@ -358,15 +395,13 @@ export default function QrLinkDetailPage({ id }: { id: string }) {
                 yDomain={[0, Math.max(1, ...hourDist.map((d) => d.y))]}
                 xTitle="Hour (UTC)"
                 yTitle="Clicks"
+                hideFilter
                 statusType="finished"
                 empty={emptyState}
                 noMatch={emptyState}
                 i18nStrings={{
                   xTickFormatter: (v) => String(v),
                   yTickFormatter: (v) => String(v),
-                  filterLabel: "Filter data",
-                  filterPlaceholder: "Filter data",
-                  filterSelectedAriaLabel: "selected",
                   legendAriaLabel: "Legend",
                   chartAriaRoleDescription: "bar chart",
                   xAxisAriaRoleDescription: "x axis",
@@ -388,9 +423,6 @@ export default function QrLinkDetailPage({ id }: { id: string }) {
                   empty={emptyState}
                   noMatch={emptyState}
                   i18nStrings={{
-                    filterLabel: "Filter data",
-                    filterPlaceholder: "Filter data",
-                    filterSelectedAriaLabel: "selected",
                     legendAriaLabel: "Legend",
                     chartAriaRoleDescription: "pie chart",
                     segmentAriaRoleDescription: "segment",
