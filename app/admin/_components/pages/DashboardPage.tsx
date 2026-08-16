@@ -314,38 +314,42 @@ export default function DashboardPage() {
                   <Box variant="h3" padding={{ bottom: "s" }}>Clicks per day by country</Box>
                   <BarChart
                     series={
-                      weekly.weekTotal > 0 && topCountries.length > 0
-                        ? // Stacked bar series — one per country
-                          Array.from(weekly.countryByDay.entries())
-                            .sort((a, b) => {
-                              const totA = Array.from(a[1].values()).reduce((s, v) => s + v, 0)
-                              const totB = Array.from(b[1].values()).reduce((s, v) => s + v, 0)
-                              return totB - totA
-                            })
-                            .slice(0, 8)
-                            .map(([country, dayMap]) => ({
-                              title: country,
-                              type: "bar" as const,
-                              data: days7.map((d) => ({
-                                x: shortDay(d),
-                                y: dayMap.get(shortDay(d)) ?? 0,
-                              })),
-                            }))
-                        : [
-                            {
-                              title: "Clicks",
-                              type: "bar" as const,
-                              data: weekly.dailyClicks,
-                              color: "#0972d3",
-                            },
-                          ]
+                      (() => {
+                        const countrySeries = Array.from(weekly.countryByDay.entries())
+                          .sort((a, b) => {
+                            const totA = Array.from(a[1].values()).reduce((s, v) => s + v, 0)
+                            const totB = Array.from(b[1].values()).reduce((s, v) => s + v, 0)
+                            return totB - totA
+                          })
+                          .slice(0, 8)
+                          .map(([country, dayMap]) => ({
+                            title: country,
+                            type: "bar" as const,
+                            data: days7.map((d) => ({
+                              x: shortDay(d),
+                              y: dayMap.get(shortDay(d)) ?? 0,
+                            })),
+                          }))
+
+                        // If no country data yet, fall back to a single "Unknown" series
+                        return countrySeries.length > 0
+                          ? countrySeries
+                          : [
+                              {
+                                title: "Unknown",
+                                type: "bar" as const,
+                                data: weekly.dailyClicks,
+                              },
+                            ]
+                      })()
                     }
                     xDomain={days7.map(shortDay)}
                     yDomain={[0, Math.max(1, ...weekly.dailyClicks.map((d) => d.y))]}
                     xTitle="Day"
                     yTitle="Clicks"
                     height={220}
-                    stackedBars={weekly.weekTotal > 0 && topCountries.length > 0}
+                    stackedBars={weekly.countryByDay.size > 1}
+                    hideFilter
                     statusType="finished"
                     empty={chartEmptyState}
                     noMatch={chartEmptyState}
