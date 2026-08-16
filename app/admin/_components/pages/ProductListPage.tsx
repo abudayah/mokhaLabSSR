@@ -7,6 +7,7 @@ import Box from "@cloudscape-design/components/box"
 import Button from "@cloudscape-design/components/button"
 import Header from "@cloudscape-design/components/header"
 import SpaceBetween from "@cloudscape-design/components/space-between"
+import Link from "@cloudscape-design/components/link"
 import { useProductStore } from "@/app/admin/_components/context/useProductStore"
 import { useNotifications } from "@/app/admin/_components/context/NotificationContext"
 import DeleteConfirmModal from "@/app/admin/_components/DeleteConfirmModal"
@@ -17,14 +18,9 @@ const columnDefinitions: TableProps.ColumnDefinition<ProductDB>[] = [
     id: "name",
     header: "Name",
     cell: (item) => (
-      <a
-        href={`/products/${item.slug}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        style={{ color: "#0972d3", textDecoration: "none" }}
-      >
+      <Link href={`/products/${item.slug}`} external>
         {item.name}
-      </a>
+      </Link>
     ),
     sortingField: "name",
     isRowHeader: true,
@@ -95,6 +91,7 @@ export default function ProductListPage() {
     <>
       <Table
         variant="full-page"
+        enableKeyboardNavigation
         loading={loading}
         loadingText="Loading products…"
         trackBy="id"
@@ -112,7 +109,11 @@ export default function ProductListPage() {
         header={
           <Header
             variant="awsui-h1-sticky"
-            counter={`(${products.length})`}
+            counter={
+              selectedItems.length > 0
+                ? `(${selectedItems.length}/${products.length})`
+                : `(${products.length})`
+            }
             actions={
               <SpaceBetween direction="horizontal" size="xs">
                 <Button
@@ -170,6 +171,7 @@ export default function ProductListPage() {
           itemName={selectedItems[0].name}
           itemCount={selectedItems.length > 1 ? selectedItems.length : undefined}
           itemNames={selectedItems.length > 1 ? selectedItems.map((p) => p.name) : undefined}
+          resourceType="product"
           onConfirm={handleDeleteConfirm}
           onDismiss={() => !deleting && setDeleteModalVisible(false)}
           loading={deleting}

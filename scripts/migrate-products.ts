@@ -356,7 +356,7 @@ const products: StaticProduct[] = [
 
 Amplify.configure(outputs)
 
-const client = generateClient<Schema>({ authMode: "userPool" })
+const client = generateClient<Schema>({ authMode: "iam" })
 
 async function main() {
   let createdCount = 0

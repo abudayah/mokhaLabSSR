@@ -53,6 +53,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       </div>
       <AppLayout
         toolsHide
+        contentType="table"
         headerSelector="#admin-top-nav"
         navigation={
           <SideNavigation

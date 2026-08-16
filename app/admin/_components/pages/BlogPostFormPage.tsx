@@ -20,17 +20,19 @@ import RichTextEditor from "@/app/admin/_components/RichTextEditor"
 import ImageUploader from "@/app/admin/_components/ImageUploader"
 
 const cleanHTML = (htmlString: string) => {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(htmlString, 'text/html');
-  // Find all elements and filter those with no text or child elements
-  doc.querySelectorAll('*').forEach(el => {
-    if (!el.textContent?.trim() && el.children.length === 0 && !['IMG', 'BR', 'HR'].includes(el.tagName)) {
-      el.remove();
+  const parser = new DOMParser()
+  const doc = parser.parseFromString(htmlString, "text/html")
+  doc.querySelectorAll("*").forEach((el) => {
+    if (
+      !el.textContent?.trim() &&
+      el.children.length === 0 &&
+      !["IMG", "BR", "HR"].includes(el.tagName)
+    ) {
+      el.remove()
     }
-  });
-  return doc.body.innerHTML;
-};
-
+  })
+  return doc.body.innerHTML
+}
 
 interface BlogPostFormPageProps {
   /** Present when editing an existing post */
@@ -95,7 +97,7 @@ export default function BlogPostFormPage({ postId }: BlogPostFormPageProps) {
     try {
       data.body = cleanHTML(data.body)
       // Remove empty tags
-      data.body = data.body.replace(/<[^/>]*><\/[^>]*>/g, '')
+      data.body = data.body.replace(/<[^/>]*><\/[^>]*>/g, "")
       if (isEditMode && postId) {
         await updatePost(postId, data)
         addNotification({
@@ -125,24 +127,24 @@ export default function BlogPostFormPage({ postId }: BlogPostFormPageProps) {
     <ContentLayout
       header={<Header variant="h1">{isEditMode ? "Edit Post" : "Create New Post"}</Header>}
     >
-      <Container>
-        <form onSubmit={handleSubmit(onSubmit)} noValidate>
-          <Form
-            actions={
-              <SpaceBetween direction="horizontal" size="xs">
-                <Button
-                  variant="link"
-                  formAction="none"
-                  onClick={() => router.push("/admin/blog")}
-                >
-                  Cancel
-                </Button>
-                <Button variant="primary" formAction="submit" loading={isSubmitting}>
-                  {isEditMode ? "Save changes" : "Create post"}
-                </Button>
-              </SpaceBetween>
-            }
-          >
+      <form onSubmit={handleSubmit(onSubmit)} noValidate>
+        <Form
+          actions={
+            <SpaceBetween direction="horizontal" size="xs">
+              <Button
+                variant="link"
+                formAction="none"
+                onClick={() => router.push("/admin/blog")}
+              >
+                Cancel
+              </Button>
+              <Button variant="primary" formAction="submit" loading={isSubmitting}>
+                {isEditMode ? "Save changes" : "Create post"}
+              </Button>
+            </SpaceBetween>
+          }
+        >
+          <Container header={<Header variant="h2">Post details</Header>}>
             <SpaceBetween size="l">
               {/* Title */}
               <FormField label="Title" errorText={get(errors, "title.message")}>
@@ -203,9 +205,9 @@ export default function BlogPostFormPage({ postId }: BlogPostFormPageProps) {
                 </FormField>
               )}
             </SpaceBetween>
-          </Form>
-        </form>
-      </Container>
+          </Container>
+        </Form>
+      </form>
     </ContentLayout>
   )
 }

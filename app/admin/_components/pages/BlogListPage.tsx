@@ -8,7 +8,7 @@ import Button from "@cloudscape-design/components/button"
 import Header from "@cloudscape-design/components/header"
 import TextFilter from "@cloudscape-design/components/text-filter"
 import SpaceBetween from "@cloudscape-design/components/space-between"
-import ContentLayout from "@cloudscape-design/components/content-layout"
+import Link from "@cloudscape-design/components/link"
 import { useBlogPostStore } from "@/app/admin/_components/context/useBlogPostStore"
 import { useNotifications } from "@/app/admin/_components/context/NotificationContext"
 import DeleteConfirmModal from "@/app/admin/_components/DeleteConfirmModal"
@@ -21,14 +21,9 @@ const columnDefinitions: TableProps.ColumnDefinition<BlogPost>[] = [
     id: "title",
     header: "Title",
     cell: (item) => (
-      <a
-        href={`/blog/${item.slug}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        style={{ color: "#0972d3", textDecoration: "none" }}
-      >
+      <Link href={`/blog/${item.slug}`} external>
         {item.title}
-      </a>
+      </Link>
     ),
     sortingField: "title",
     isRowHeader: true,
@@ -131,9 +126,10 @@ export default function BlogListPage() {
   })
 
   return (
-    <ContentLayout header={<Header variant="h1">Blog Posts</Header>}>
+    <>
       <Table
         variant="full-page"
+        enableKeyboardNavigation
         loading={loading}
         loadingText="Loading posts…"
         trackBy="id"
@@ -191,11 +187,12 @@ export default function BlogListPage() {
         <DeleteConfirmModal
           visible={true}
           itemName={deleteTarget.title}
+          resourceType="post"
           onConfirm={handleDeleteConfirm}
           onDismiss={() => !deleting && setDeleteTarget(null)}
           loading={deleting}
         />
       )}
-    </ContentLayout>
+    </>
   )
 }
