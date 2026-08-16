@@ -13,6 +13,7 @@ import Link from "@cloudscape-design/components/link"
 import StatusIndicator from "@cloudscape-design/components/status-indicator"
 import Badge from "@cloudscape-design/components/badge"
 import BarChart from "@cloudscape-design/components/bar-chart"
+import LineChart from "@cloudscape-design/components/line-chart"
 import PieChart from "@cloudscape-design/components/pie-chart"
 import Spinner from "@cloudscape-design/components/spinner"
 import { useBlogPostStore } from "@/app/admin/_components/context/useBlogPostStore"
@@ -309,10 +310,10 @@ export default function DashboardPage() {
 
               {/* Daily clicks bar chart + countries pie */}
               <ColumnLayout columns={weekly.weekTotal > 0 && topCountries.length > 0 ? 2 : 1}>
-                {/* Clicks per day — stacked by country if data exists, plain bar otherwise */}
+                {/* Clicks per day — line chart by country */}
                 <div>
                   <Box variant="h3" padding={{ bottom: "s" }}>Clicks per day by country</Box>
-                  <BarChart
+                  <LineChart
                     series={
                       (() => {
                         const countrySeries = Array.from(weekly.countryByDay.entries())
@@ -324,20 +325,18 @@ export default function DashboardPage() {
                           .slice(0, 8)
                           .map(([country, dayMap]) => ({
                             title: country,
-                            type: "bar" as const,
+                            type: "line" as const,
                             data: days7.map((d) => ({
                               x: shortDay(d),
                               y: dayMap.get(shortDay(d)) ?? 0,
                             })),
                           }))
-
-                        // If no country data yet, fall back to a single "Unknown" series
                         return countrySeries.length > 0
                           ? countrySeries
                           : [
                               {
                                 title: "Unknown",
-                                type: "bar" as const,
+                                type: "line" as const,
                                 data: weekly.dailyClicks,
                               },
                             ]
@@ -348,7 +347,6 @@ export default function DashboardPage() {
                     xTitle="Day"
                     yTitle="Clicks"
                     height={220}
-                    stackedBars={weekly.countryByDay.size > 1}
                     hideFilter
                     statusType="finished"
                     empty={chartEmptyState}
@@ -357,7 +355,7 @@ export default function DashboardPage() {
                       xTickFormatter: (v) => String(v),
                       yTickFormatter: (v) => String(v),
                       legendAriaLabel: "Legend",
-                      chartAriaRoleDescription: "bar chart",
+                      chartAriaRoleDescription: "line chart",
                       xAxisAriaRoleDescription: "x axis",
                       yAxisAriaRoleDescription: "y axis",
                     }}

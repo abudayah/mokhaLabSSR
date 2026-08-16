@@ -133,7 +133,7 @@ export function ProductGallery({ images, name }: ProductGalleryProps) {
             </button>
 
             {/* Dot indicators — visible on mobile when arrows are hidden */}
-            <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1.5 md:hidden">
+            {/* <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1.5 md:hidden">
               {images.map((_, i) => (
                 <button
                   key={i}
@@ -146,7 +146,7 @@ export function ProductGallery({ images, name }: ProductGalleryProps) {
                   }`}
                 />
               ))}
-            </div>
+            </div> */}
 
             {/* Image counter — top right corner */}
             <div className="absolute top-2 right-2 text-[11px] font-medium text-foreground/60 bg-background/70 backdrop-blur-sm px-2 py-0.5 rounded-full pointer-events-none">
@@ -159,14 +159,14 @@ export function ProductGallery({ images, name }: ProductGalleryProps) {
       {/* ── Thumbnails ───────────────────────────────────────── */}
       {images.length > 1 && (
         <div ref={thumbRef} className="overflow-hidden">
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2 justify-center">
             {images.map((src, i) => (
               <button
                 key={i}
                 onClick={() => onThumbClick(i)}
                 aria-label={`View image ${i + 1} of ${images.length}`}
                 className={`
-                  flex-[0_0_auto] w-16 aspect-square overflow-hidden bg-secondary
+                  flex-[0_0_auto] w-20 aspect-square overflow-hidden bg-secondary
                   border-2 transition-all duration-200
                   ${i === activeIndex
                     ? "border-foreground"

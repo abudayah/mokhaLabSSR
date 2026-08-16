@@ -7,6 +7,7 @@ import { z } from "zod"
 import { CInput } from "react-hook-form-cloudscape"
 import Alert from "@cloudscape-design/components/alert"
 import BarChart from "@cloudscape-design/components/bar-chart"
+import LineChart from "@cloudscape-design/components/line-chart"
 import Box from "@cloudscape-design/components/box"
 import Button from "@cloudscape-design/components/button"
 import ColumnLayout from "@cloudscape-design/components/column-layout"
@@ -249,7 +250,7 @@ export default function QrLinkDetailPage({ id }: { id: string }) {
     .slice(0, 8)
     .map(({ country, dayMap }) => ({
       title: country,
-      type: "bar" as const,
+      type: "line" as const,
       data: allDates.map((d) => ({ x: d, y: dayMap.get(d) ?? 0 })),
     }))
 
@@ -260,7 +261,7 @@ export default function QrLinkDetailPage({ id }: { id: string }) {
       : [
           {
             title: "Unknown",
-            type: "bar" as const,
+            type: "line" as const,
             data: summaries.map((s) => ({ x: s.dateKey, y: s.totalClicks })),
           },
         ]
@@ -358,18 +359,20 @@ export default function QrLinkDetailPage({ id }: { id: string }) {
             </Container>
           )}
 
-          {/* ── Clicks over time (stacked by country) ────────────── */}
+          {/* ── Clicks over time — line chart by country ─────────── */}
           <Container header={<Header variant="h2">Clicks over time</Header>}>
             {metricsLoading ? (
               <Box textAlign="center" padding="l"><Spinner size="large" /></Box>
             ) : (
-              <BarChart
-                series={clicksOverTimeSeries}
+              <LineChart
+                series={clicksOverTimeSeries.map((s) => ({
+                  ...s,
+                  type: "line" as const,
+                }))}
                 xDomain={allDates}
                 yDomain={[0, Math.max(1, ...summaries.map((s) => s.totalClicks))]}
                 xTitle="Date"
                 yTitle="Clicks"
-                stackedBars={countrySeries.length > 1}
                 hideFilter
                 statusType="finished"
                 empty={emptyState}
@@ -378,7 +381,7 @@ export default function QrLinkDetailPage({ id }: { id: string }) {
                   xTickFormatter: (v) => String(v),
                   yTickFormatter: (v) => String(v),
                   legendAriaLabel: "Legend",
-                  chartAriaRoleDescription: "bar chart",
+                  chartAriaRoleDescription: "line chart",
                   xAxisAriaRoleDescription: "x axis",
                   yAxisAriaRoleDescription: "y axis",
                 }}
