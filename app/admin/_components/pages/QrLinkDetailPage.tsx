@@ -371,6 +371,7 @@ export default function QrLinkDetailPage({ id }: { id: string }) {
                 }))}
                 xDomain={allDates}
                 yDomain={[0, Math.max(1, ...summaries.map((s) => s.totalClicks))]}
+                xScaleType="categorical"
                 xTitle="Date"
                 yTitle="Clicks"
                 hideFilter

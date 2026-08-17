@@ -344,6 +344,7 @@ export default function DashboardPage() {
                     }
                     xDomain={days7.map(shortDay)}
                     yDomain={[0, Math.max(1, ...weekly.dailyClicks.map((d) => d.y))]}
+                    xScaleType="categorical"
                     xTitle="Day"
                     yTitle="Clicks"
                     height={220}
