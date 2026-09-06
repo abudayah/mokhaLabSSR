@@ -10,6 +10,7 @@ import BarChart from "@cloudscape-design/components/bar-chart"
 import LineChart from "@cloudscape-design/components/line-chart"
 import Box from "@cloudscape-design/components/box"
 import Button from "@cloudscape-design/components/button"
+import ButtonDropdown from "@cloudscape-design/components/button-dropdown"
 import ColumnLayout from "@cloudscape-design/components/column-layout"
 import Container from "@cloudscape-design/components/container"
 import ContentLayout from "@cloudscape-design/components/content-layout"
@@ -26,7 +27,7 @@ import ProgressBar from "@cloudscape-design/components/progress-bar"
 import Link from "@cloudscape-design/components/link"
 import { useQrLinkStore } from "@/app/admin/_components/context/useQrLinkStore"
 import { useNotifications } from "@/app/admin/_components/context/NotificationContext"
-import { generateQrSvg, downloadQrSvg } from "@/app/admin/_components/utils/qrCodeUtils"
+import { generateQrSvg, downloadQrSvg, generateQrPngDataUrl, downloadQrPng } from "@/app/admin/_components/utils/qrCodeUtils"
 import {
   type ClickMetricSummary,
   parseMetricCounter,
@@ -178,8 +179,15 @@ export default function QrLinkDetailPage({ id }: { id: string }) {
 
   const [summaries, setSummaries] = useState<ClickMetricSummary[]>([])
   const [metricsLoading, setMetricsLoading] = useState(true)
+  const [qrSvg, setQrSvg] = useState<string | null>(null)
   const [downloadingQr, setDownloadingQr] = useState(false)
   const [editModalVisible, setEditModalVisible] = useState(false)
+
+  // Generate QR SVG once on mount for preview
+  useEffect(() => {
+    if (!link) return
+    generateQrSvg(link.code).then(setQrSvg).catch(() => setQrSvg(null))
+  }, [link])
 
   useEffect(() => {
     let cancelled = false
@@ -190,17 +198,6 @@ export default function QrLinkDetailPage({ id }: { id: string }) {
       .finally(() => { if (!cancelled) setMetricsLoading(false) })
     return () => { cancelled = true }
   }, [id, fetchMetricSummaries])
-
-  async function handleDownloadQr() {
-    if (!link) return
-    setDownloadingQr(true)
-    try {
-      const svg = await generateQrSvg(link.code)
-      downloadQrSvg(svg, link.code)
-    } finally {
-      setDownloadingQr(false)
-    }
-  }
 
   if (!link) {
     return (
@@ -292,9 +289,31 @@ export default function QrLinkDetailPage({ id }: { id: string }) {
             actions={
               <SpaceBetween direction="horizontal" size="xs">
                 <Button onClick={() => setEditModalVisible(true)}>Edit</Button>
-                <Button variant="primary" loading={downloadingQr} onClick={handleDownloadQr}>
+                <ButtonDropdown
+                  variant="primary"
+                  loading={downloadingQr}
+                  items={[
+                    { id: "svg", text: "Download as SVG" },
+                    { id: "png", text: "Download as PNG" },
+                  ]}
+                  onItemClick={async ({ detail }) => {
+                    if (!link) return
+                    setDownloadingQr(true)
+                    try {
+                      if (detail.id === "svg") {
+                        const svg = await generateQrSvg(link.code)
+                        downloadQrSvg(svg, link.code)
+                      } else {
+                        const dataUrl = await generateQrPngDataUrl(link.code)
+                        downloadQrPng(dataUrl, link.code)
+                      }
+                    } finally {
+                      setDownloadingQr(false)
+                    }
+                  }}
+                >
                   Download QR code
-                </Button>
+                </ButtonDropdown>
               </SpaceBetween>
             }
           >
@@ -330,6 +349,102 @@ export default function QrLinkDetailPage({ id }: { id: string }) {
                 { label: "Likely scans", value: metricsLoading ? "—" : String(totals.likelyScanClicks) },
               ]}
             />
+          </Container>
+
+          {/* ── QR code preview ──────────────────────────────────── */}
+          <Container header={<Header variant="h2">QR code</Header>}>
+            <ColumnLayout columns={2}>
+              {/* Preview */}
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "12px" }}>
+                <Box variant="awsui-key-label">Preview</Box>
+                <div
+                  style={{
+                    width: 200,
+                    height: 200,
+                    border: "1px solid var(--color-border-divider-default)",
+                    borderRadius: 8,
+                    padding: 12,
+                    background: "#fff",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  {qrSvg ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={`data:image/svg+xml;utf8,${encodeURIComponent(qrSvg)}`}
+                      alt={`QR code for /${link.code}`}
+                      width={176}
+                      height={176}
+                      style={{ display: "block" }}
+                    />
+                  ) : (
+                    <Spinner size="large" />
+                  )}
+                </div>
+                <Box variant="small" color="text-body-secondary">
+                  Encodes: {BASE_URL}/go/{link.code}
+                </Box>
+              </div>
+
+              {/* Download options */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                <Box variant="awsui-key-label">Download</Box>
+                <SpaceBetween size="s">
+                  <div>
+                    <Box fontWeight="bold" variant="p">SVG (vector)</Box>
+                    <Box variant="small" color="text-body-secondary">
+                      Scalable — ideal for print, packaging, and large formats.
+                    </Box>
+                    <Box padding={{ top: "xs" }}>
+                      <Button
+                        iconName="download"
+                        loading={downloadingQr}
+                        formAction="none"
+                        onClick={async () => {
+                          if (!link) return
+                          setDownloadingQr(true)
+                          try {
+                            const svg = await generateQrSvg(link.code)
+                            downloadQrSvg(svg, link.code)
+                          } finally {
+                            setDownloadingQr(false)
+                          }
+                        }}
+                      >
+                        Download SVG
+                      </Button>
+                    </Box>
+                  </div>
+                  <div>
+                    <Box fontWeight="bold" variant="p">PNG (512×512)</Box>
+                    <Box variant="small" color="text-body-secondary">
+                      Raster image — ideal for digital use, emails, and presentations.
+                    </Box>
+                    <Box padding={{ top: "xs" }}>
+                      <Button
+                        iconName="download"
+                        loading={downloadingQr}
+                        formAction="none"
+                        onClick={async () => {
+                          if (!link) return
+                          setDownloadingQr(true)
+                          try {
+                            const dataUrl = await generateQrPngDataUrl(link.code)
+                            downloadQrPng(dataUrl, link.code)
+                          } finally {
+                            setDownloadingQr(false)
+                          }
+                        }}
+                      >
+                        Download PNG
+                      </Button>
+                    </Box>
+                  </div>
+                </SpaceBetween>
+              </div>
+            </ColumnLayout>
           </Container>
 
           {/* ── Summary stats ────────────────────────────────────── */}

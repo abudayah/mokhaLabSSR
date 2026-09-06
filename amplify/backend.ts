@@ -37,7 +37,10 @@ bucket.addToResourcePolicy(
     effect: Effect.ALLOW,
     principals: [new AnyPrincipal()],
     actions: ["s3:GetObject"],
-    resources: [`${bucket.bucketArn}/blog-images/*`],
+    resources: [
+      `${bucket.bucketArn}/blog-images/*`,
+      `${bucket.bucketArn}/product-images/*`,
+    ],
   })
 )
 

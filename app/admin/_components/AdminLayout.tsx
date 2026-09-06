@@ -5,11 +5,25 @@ import AppLayout from "@cloudscape-design/components/app-layout"
 import TopNavigation from "@cloudscape-design/components/top-navigation"
 import SideNavigation from "@cloudscape-design/components/side-navigation"
 import Flashbar from "@cloudscape-design/components/flashbar"
+import Icon from "@cloudscape-design/components/icon"
 import { signOut } from "aws-amplify/auth"
 import { useNotifications } from "./context/NotificationContext"
 
+const TOP_NAV_ID = "admin-top-nav"
+
 interface AdminLayoutProps {
   children: React.ReactNode
+}
+
+/** Icon rendered in the `info` slot to appear before nav item text via CSS flex order trick.
+ *  Cloudscape SideNavigation links don't have a native iconName prop, so we use `info`
+ *  with a leading icon styled to sit before the text. */
+function NavIcon({ name }: { name: Parameters<typeof Icon>[0]["name"] }) {
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", marginRight: 6 }}>
+      <Icon name={name} />
+    </span>
+  )
 }
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
@@ -35,7 +49,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
   return (
     <>
-      <div id="admin-top-nav">
+      {/* TopNavigation must sit outside AppLayout in the DOM */}
+      <div id={TOP_NAV_ID} style={{ position: "sticky", top: 0, zIndex: 1000 }}>
         <TopNavigation
           identity={{
             href: "/admin",
@@ -59,29 +74,55 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       </div>
       <AppLayout
         toolsHide
-        contentType="table"
-        headerSelector="#admin-top-nav"
+        stickyNotifications
+        contentType="default"
+        headerSelector={`#${TOP_NAV_ID}`}
         navigation={
           <SideNavigation
             header={{ text: "Admin", href: "/admin" }}
             activeHref={activeHref}
             items={[
-              { type: "link", text: "Dashboard", href: "/admin" },
+              {
+                type: "link",
+                text: "Dashboard",
+                href: "/admin",
+                info: <NavIcon name="view-full" />,
+              },
               { type: "divider" },
               {
                 type: "section-group",
                 title: "Content",
                 items: [
-                  { type: "link", text: "Blog Posts", href: "/admin/blog" },
-                  { type: "link", text: "Products", href: "/admin/products" },
+                  {
+                    type: "link",
+                    text: "Blog Posts",
+                    href: "/admin/blog",
+                    info: <NavIcon name="edit" />,
+                  },
+                  {
+                    type: "link",
+                    text: "Products",
+                    href: "/admin/products",
+                    info: <NavIcon name="ticket" />,
+                  },
                 ],
               },
               {
                 type: "section-group",
                 title: "Tools",
                 items: [
-                  { type: "link", text: "QR Links", href: "/admin/qr-links" },
-                  { type: "link", text: "Support Tickets", href: "/admin/support" },
+                  {
+                    type: "link",
+                    text: "QR Links",
+                    href: "/admin/qr-links",
+                    info: <NavIcon name="gen-ai" />,
+                  },
+                  {
+                    type: "link",
+                    text: "Support",
+                    href: "/admin/support",
+                    info: <NavIcon name="support" />,
+                  },
                 ],
               },
             ]}
@@ -93,7 +134,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             }}
           />
         }
-        notifications={<Flashbar items={notifications} />}
+        notifications={<Flashbar items={notifications} stackItems />}
         content={children}
       />
     </>

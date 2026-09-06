@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import React, { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import ContentLayout from "@cloudscape-design/components/content-layout"
 import Header from "@cloudscape-design/components/header"
@@ -8,11 +8,11 @@ import Container from "@cloudscape-design/components/container"
 import ColumnLayout from "@cloudscape-design/components/column-layout"
 import SpaceBetween from "@cloudscape-design/components/space-between"
 import Button from "@cloudscape-design/components/button"
+import ButtonDropdown from "@cloudscape-design/components/button-dropdown"
 import Box from "@cloudscape-design/components/box"
 import Link from "@cloudscape-design/components/link"
 import StatusIndicator from "@cloudscape-design/components/status-indicator"
 import Badge from "@cloudscape-design/components/badge"
-import BarChart from "@cloudscape-design/components/bar-chart"
 import LineChart from "@cloudscape-design/components/line-chart"
 import PieChart from "@cloudscape-design/components/pie-chart"
 import Spinner from "@cloudscape-design/components/spinner"
@@ -21,6 +21,7 @@ import { useProductStore } from "@/app/admin/_components/context/useProductStore
 import { useQrLinkStore } from "@/app/admin/_components/context/useQrLinkStore"
 import { useSupportTicketStore } from "@/app/admin/_components/context/useSupportTicketStore"
 import { parseMetricCounter, type ClickMetricSummary } from "@/lib/qr-links"
+import { S3Image } from "@/components/S3Image"
 
 // ---------------------------------------------------------------------------
 // Stat card
@@ -68,32 +69,6 @@ function StatCard({
       )}
       <Link href={href}>{linkText}</Link>
     </div>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// Quick action card
-// ---------------------------------------------------------------------------
-function QuickActionCard({
-  title,
-  description,
-  buttonText,
-  href,
-}: {
-  title: string
-  description: string
-  buttonText: string
-  href: string
-}) {
-  const router = useRouter()
-  return (
-    <SpaceBetween size="s">
-      <div>
-        <Box variant="h3" padding="n">{title}</Box>
-        <Box variant="p" color="text-body-secondary">{description}</Box>
-      </div>
-      <Button onClick={() => router.push(href)}>{buttonText}</Button>
-    </SpaceBetween>
   )
 }
 
@@ -213,15 +188,34 @@ export default function DashboardPage() {
     .sort((a, b) => b.value - a.value)
     .slice(0, 8)
 
+  const router = useRouter()
+
   return (
     <ContentLayout
       header={
         <Header
           variant="h1"
           actions={
-            <Button href="/" target="_blank" iconAlign="right" iconName="external">
-              View site
-            </Button>
+            <SpaceBetween direction="horizontal" size="xs">
+              <ButtonDropdown
+                variant="primary"
+                items={[
+                  { id: "product", text: "New product", iconName: "add-plus" },
+                  { id: "blog", text: "New blog post", iconName: "add-plus" },
+                  { id: "qr-link", text: "New QR link", iconName: "add-plus" },
+                ]}
+                onItemClick={({ detail }) => {
+                  if (detail.id === "product") router.push("/admin/products/new")
+                  else if (detail.id === "blog") router.push("/admin/blog/new")
+                  else if (detail.id === "qr-link") router.push("/admin/qr-links/new")
+                }}
+              >
+                Create
+              </ButtonDropdown>
+              <Button href="/" target="_blank" iconAlign="right" iconName="external">
+                View site
+              </Button>
+            </SpaceBetween>
           }
         >
           Dashboard
@@ -385,29 +379,6 @@ export default function DashboardPage() {
           )}
         </Container>
 
-        {/* ── Quick actions ────────────────────────────────────── */}
-        <Container header={<Header variant="h2">Quick actions</Header>}>
-          <ColumnLayout columns={3}>
-            <QuickActionCard
-              title="Add a product"
-              description="Create a new product listing with pricing, images, and availability."
-              buttonText="Create product"
-              href="/admin/products/new"
-            />
-            <QuickActionCard
-              title="Write a blog post"
-              description="Publish a new article to the mokhaLab blog."
-              buttonText="Create post"
-              href="/admin/blog/new"
-            />
-            <QuickActionCard
-              title="View open tickets"
-              description="Review and respond to customer support requests."
-              buttonText="View support"
-              href="/admin/support"
-            />
-          </ColumnLayout>
-        </Container>
 
         {/* ── Tickets + QR links ──────────────────────────────── */}
         <ColumnLayout columns={2}>
@@ -493,6 +464,7 @@ export default function DashboardPage() {
 
         {/* ── Content summary ─────────────────────────────────── */}
         <ColumnLayout columns={2}>
+          {/* Recent posts */}
           <Container
             header={
               <Header variant="h2" counter={`(${posts.length})`} actions={<Link href="/admin/blog">View all</Link>}>
@@ -509,17 +481,70 @@ export default function DashboardPage() {
             ) : (
               <SpaceBetween size="s">
                 {recentPosts.map((post) => (
-                  <div key={post.id}>
-                    <Link href={`/admin/blog/${post.id}/edit`}>{post.title}</Link>
-                    <Box variant="small" color="text-body-secondary">
-                      {post.date} &middot; {post.author}
-                    </Box>
+                  <div
+                    key={post.id}
+                    style={{
+                      display: "flex",
+                      gap: "12px",
+                      alignItems: "flex-start",
+                      paddingBottom: "12px",
+                      borderBottom: "1px solid var(--color-border-divider-default)",
+                    }}
+                  >
+                    {/* Thumbnail */}
+                    <div
+                      style={{
+                        flexShrink: 0,
+                        width: "64px",
+                        height: "64px",
+                        borderRadius: "4px",
+                        overflow: "hidden",
+                        background: "var(--color-background-input-disabled)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      {post.featuredImage ? (
+                        <S3Image
+                          src={post.featuredImage}
+                          alt={post.title}
+                          style={{ width: "64px", height: "64px", objectFit: "cover", display: "block" }}
+                        />
+                      ) : (
+                        <Box color="text-body-secondary" fontSize="body-s">No image</Box>
+                      )}
+                    </div>
+                    {/* Text */}
+                    <div style={{ minWidth: 0 }}>
+                      <Link href={`/admin/blog/${post.id}/edit`} fontSize="body-m">
+                        {post.title}
+                      </Link>
+                      <Box variant="small" color="text-body-secondary">
+                        {post.date} &middot; {post.author}
+                      </Box>
+                      {post.subtitle && (
+                        <div
+                          style={{
+                            display: "-webkit-box",
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: "vertical",
+                            overflow: "hidden",
+                            fontSize: "12px",
+                            color: "var(--color-text-body-secondary)",
+                          } as React.CSSProperties}
+                        >
+                          {post.subtitle}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 ))}
               </SpaceBetween>
             )}
           </Container>
 
+          {/* Products */}
           <Container
             header={
               <Header variant="h2" counter={`(${products.length})`} actions={<Link href="/admin/products">View all</Link>}>
@@ -536,20 +561,73 @@ export default function DashboardPage() {
             ) : (
               <SpaceBetween size="s">
                 {products.slice(0, 4).map((product) => (
-                  <div key={product.id}>
-                    <SpaceBetween direction="horizontal" size="xs" alignItems="center">
-                      <Link href={`/admin/products/${product.id}/edit`}>{product.name}</Link>
-                      <SpaceBetween direction="horizontal" size="xxs">
-                        {product.availableUS && <Badge color="blue">US</Badge>}
-                        {product.availableCA && <Badge color="green">CA</Badge>}
+                  <div
+                    key={product.id}
+                    style={{
+                      display: "flex",
+                      gap: "12px",
+                      alignItems: "flex-start",
+                      paddingBottom: "12px",
+                      borderBottom: "1px solid var(--color-border-divider-default)",
+                    }}
+                  >
+                    {/* Thumbnail */}
+                    <div
+                      style={{
+                        flexShrink: 0,
+                        width: "64px",
+                        height: "64px",
+                        borderRadius: "4px",
+                        overflow: "hidden",
+                        background: "var(--color-background-input-disabled)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      {product.image ? (
+                        <S3Image
+                          src={product.image}
+                          alt={product.name}
+                          style={{ width: "64px", height: "64px", objectFit: "cover", display: "block" }}
+                        />
+                      ) : (
+                        <Box color="text-body-secondary" fontSize="body-s">No image</Box>
+                      )}
+                    </div>
+                    {/* Text */}
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <SpaceBetween direction="horizontal" size="xs" alignItems="center">
+                        <Link href={`/admin/products/${product.id}/edit`} fontSize="body-m">
+                          {product.name}
+                        </Link>
+                        <SpaceBetween direction="horizontal" size="xxs">
+                          {product.availableUS && <Badge color="blue">US</Badge>}
+                          {product.availableCA && <Badge color="green">CA</Badge>}
+                        </SpaceBetween>
                       </SpaceBetween>
-                    </SpaceBetween>
-                    <Box variant="small" color="text-body-secondary">
-                      ${product.priceUSD.toFixed(2)} USD &middot;{" "}
-                      <Link href={`/products/${product.slug}`} external fontSize="inherit">
-                        View on site
-                      </Link>
-                    </Box>
+                      <Box variant="small" color="text-body-secondary">
+                        {product.priceUSD > 0 ? `$${product.priceUSD.toFixed(2)} USD` : "Price not set"}
+                        {" · "}
+                        <Link href={`/products/${product.slug}`} external fontSize="inherit">
+                          View on site
+                        </Link>
+                      </Box>
+                      {product.tagline && (
+                        <div
+                          style={{
+                            display: "-webkit-box",
+                            WebkitLineClamp: 1,
+                            WebkitBoxOrient: "vertical",
+                            overflow: "hidden",
+                            fontSize: "12px",
+                            color: "var(--color-text-body-secondary)",
+                          } as React.CSSProperties}
+                        >
+                          {product.tagline}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 ))}
               </SpaceBetween>
