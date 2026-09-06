@@ -3,13 +3,15 @@
 import { useState, useCallback, useEffect } from "react"
 import useEmblaCarousel from "embla-carousel-react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
+import { resolveImageUrl } from "@/lib/image-url"
 
 interface ProductGalleryProps {
   images: string[]
   name: string
 }
 
-export function ProductGallery({ images, name }: ProductGalleryProps) {
+export function ProductGallery({ images: rawImages, name }: ProductGalleryProps) {
+  const images = rawImages.map((src) => resolveImageUrl(src))
   const [activeIndex, setActiveIndex] = useState(0)
 
   // Main carousel — touch/swipe + wheel enabled

@@ -16,6 +16,7 @@ import Badge from "@cloudscape-design/components/badge"
 import LineChart from "@cloudscape-design/components/line-chart"
 import PieChart from "@cloudscape-design/components/pie-chart"
 import Spinner from "@cloudscape-design/components/spinner"
+import Table from "@cloudscape-design/components/table"
 import { useBlogPostStore } from "@/app/admin/_components/context/useBlogPostStore"
 import { useProductStore } from "@/app/admin/_components/context/useProductStore"
 import { useQrLinkStore } from "@/app/admin/_components/context/useQrLinkStore"
@@ -382,7 +383,9 @@ export default function DashboardPage() {
 
         {/* ── Tickets + QR links ──────────────────────────────── */}
         <ColumnLayout columns={2}>
-          <Container
+          {/* Support tickets table */}
+          <Table
+            variant="container"
             header={
               <Header
                 variant="h2"
@@ -392,74 +395,122 @@ export default function DashboardPage() {
                 Support tickets
               </Header>
             }
-          >
-            {ticketsLoading ? (
-              <StatusIndicator type="loading">Loading tickets</StatusIndicator>
-            ) : recentTickets.length === 0 ? (
-              <Box variant="p" color="text-body-secondary">No tickets yet.</Box>
-            ) : (
-              <SpaceBetween size="s">
-                {recentTickets.map((ticket) => (
-                  <div key={ticket.id}>
-                    <SpaceBetween direction="horizontal" size="xs" alignItems="center">
-                      <Link href={`/admin/support/${ticket.id}`}>{ticket.ticketId}</Link>
-                      <Badge
-                        color={
-                          ticket.status === "New" ? "red"
-                          : ticket.status === "InProgress" ? "blue"
-                          : ticket.status === "Resolved" ? "green"
-                          : "grey"
-                        }
-                      >
-                        {ticket.status === "InProgress" ? "In Progress" : ticket.status}
-                      </Badge>
-                    </SpaceBetween>
-                    <Box variant="small" color="text-body-secondary">
-                      {ticket.customerName} &middot; {ticket.caseType} &middot; {ticket.productName}
-                    </Box>
-                  </div>
-                ))}
-              </SpaceBetween>
-            )}
-          </Container>
+            loading={ticketsLoading}
+            loadingText="Loading tickets"
+            empty={
+              <Box textAlign="center" color="text-body-secondary" padding="m">
+                No tickets yet.
+              </Box>
+            }
+            trackBy="id"
+            items={recentTickets}
+            columnDefinitions={[
+              {
+                id: "ticket",
+                header: "Ticket",
+                cell: (t) => (
+                  <Link href={`/admin/support/${t.id}`} fontSize="body-s">
+                    {t.ticketId}
+                  </Link>
+                ),
+                width: 110,
+              },
+              {
+                id: "customer",
+                header: "Customer",
+                cell: (t) => (
+                  <Box fontSize="body-s">{t.customerName}</Box>
+                ),
+              },
+              {
+                id: "type",
+                header: "Type",
+                cell: (t) => <Box fontSize="body-s">{t.caseType}</Box>,
+                width: 90,
+              },
+              {
+                id: "status",
+                header: "Status",
+                cell: (t) => (
+                  <Badge
+                    color={
+                      t.status === "New" ? "red"
+                      : t.status === "InProgress" ? "blue"
+                      : t.status === "Resolved" ? "green"
+                      : "grey"
+                    }
+                  >
+                    {t.status === "InProgress" ? "In Progress" : t.status}
+                  </Badge>
+                ),
+                width: 100,
+              },
+            ]}
+          />
 
-          <Container
+          {/* QR link performance table */}
+          <Table
+            variant="container"
             header={
               <Header
                 variant="h2"
-                counter={`(${totalClicks.toLocaleString()} total clicks)`}
+                counter={`(${totalClicks.toLocaleString()} clicks)`}
                 actions={<Link href="/admin/qr-links">View all</Link>}
               >
                 QR link performance
               </Header>
             }
-          >
-            {linksLoading ? (
-              <StatusIndicator type="loading">Loading QR links</StatusIndicator>
-            ) : topLinks.length === 0 ? (
-              <Box variant="p" color="text-body-secondary">No QR links yet.</Box>
-            ) : (
-              <SpaceBetween size="s">
-                {topLinks.map((link) => (
-                  <div key={link.id}>
-                    <SpaceBetween direction="horizontal" size="xs" alignItems="center">
-                      <Link href={`/admin/qr-links/${link.id}`}>{link.label ?? link.code}</Link>
-                      <Box variant="small" color="text-body-secondary">
-                        {(link.clickCount ?? 0).toLocaleString()} clicks
-                      </Box>
-                    </SpaceBetween>
-                    <Box variant="small" color="text-body-secondary">
-                      /{link.code} &rarr;{" "}
-                      <Link href={link.destinationUrl} external fontSize="inherit">
-                        {link.destinationUrl.replace(/^https?:\/\//, "").slice(0, 40)}
-                        {link.destinationUrl.length > 47 ? "…" : ""}
-                      </Link>
-                    </Box>
-                  </div>
-                ))}
-              </SpaceBetween>
-            )}
-          </Container>
+            loading={linksLoading}
+            loadingText="Loading QR links"
+            empty={
+              <Box textAlign="center" color="text-body-secondary" padding="m">
+                No QR links yet.
+              </Box>
+            }
+            trackBy="id"
+            items={topLinks}
+            columnDefinitions={[
+              {
+                id: "label",
+                header: "Label",
+                cell: (l) => (
+                  <Link href={`/admin/qr-links/${l.id}`} fontSize="body-s">
+                    {l.label ?? l.code}
+                  </Link>
+                ),
+              },
+              {
+                id: "code",
+                header: "Code",
+                cell: (l) => (
+                  <Box fontSize="body-s" color="text-body-secondary">
+                    /{l.code}
+                  </Box>
+                ),
+                width: 90,
+              },
+              {
+                id: "destination",
+                header: "Destination",
+                cell: (l) => (
+                  <Link href={l.destinationUrl} external fontSize="body-s">
+                    {l.destinationUrl.replace(/^https?:\/\//, "").slice(0, 28)}
+                    {l.destinationUrl.replace(/^https?:\/\//, "").length > 28 ? "…" : ""}
+                  </Link>
+                ),
+              },
+              {
+                id: "clicks",
+                header: "Clicks",
+                cell: (l) => (
+                  <Box fontSize="body-s" textAlign="right">
+                    {(l.clickCount ?? 0).toLocaleString()}
+                  </Box>
+                ),
+                width: 70,
+              },
+            ]}
+          />
         </ColumnLayout>
 
         {/* ── Content summary ─────────────────────────────────── */}

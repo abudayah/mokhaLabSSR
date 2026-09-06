@@ -6,7 +6,7 @@ import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import { getServerClient } from "@/lib/amplify-server-utils"
 import { toProductDB, type ProductDB, type ProductDBRaw } from "@/lib/products-db"
-import { SITE_URL } from "@/lib/image-url"
+import { SITE_URL, resolveImageUrl, resolveOgImageUrl } from "@/lib/image-url"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
 import { ProductGallery } from "@/components/product/product-gallery"
@@ -51,7 +51,7 @@ export async function generateMetadata({
 
   const description = `${product.tagline} — ${product.description.slice(0, 120)}…`
   const url = `${SITE_URL}/products/${product.slug}`
-  const ogImageUrl = `${SITE_URL}${product.image.replace(/\/[^/]+$/, "/og.png")}`
+  const ogImageUrl = resolveOgImageUrl(product.image)
 
   return {
     title: product.name,
@@ -121,7 +121,7 @@ function ProductJsonLd({ product }: { product: ProductDB }) {
     url: productUrl,
     sku: product.id,
     mpn: product.id,
-    image: product.images.map((img) => `${SITE_URL}${img}`),
+    image: product.images.map((img) => resolveImageUrl(img)),
     brand: { "@type": "Brand", name: "mokhaLab" },
     aggregateRating: {
       "@type": "AggregateRating",
@@ -260,7 +260,7 @@ export default async function ProductPage({ params }: { params: { slug: string }
                         <div className="w-16 h-16 shrink-0 overflow-hidden bg-background flex items-center justify-center p-2">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
-                            src={related.image}
+                            src={resolveImageUrl(related.image)}
                             alt={related.name}
                             className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
                           />

@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
 import type { ProductDB } from "@/lib/products-db"
+import { resolveImageUrl } from "@/lib/image-url"
 
 interface ProductCardProps {
   product: ProductDB
@@ -16,7 +17,7 @@ export function ProductCard({ product }: ProductCardProps) {
       <div className="relative aspect-square flex items-center justify-center p-4 bg-secondary overflow-hidden">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={product.image}
+          src={resolveImageUrl(product.image)}
           alt={product.name}
           className="object-contain w-full h-full transition-transform duration-700 group-hover:scale-105"
         />
