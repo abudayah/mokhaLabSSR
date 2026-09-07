@@ -480,26 +480,6 @@ export default function DashboardPage() {
                 ),
               },
               {
-                id: "code",
-                header: "Code",
-                cell: (l) => (
-                  <Box fontSize="body-s" color="text-body-secondary">
-                    /{l.code}
-                  </Box>
-                ),
-                width: 90,
-              },
-              {
-                id: "destination",
-                header: "Destination",
-                cell: (l) => (
-                  <Link href={l.destinationUrl} external fontSize="body-s">
-                    {l.destinationUrl.replace(/^https?:\/\//, "").slice(0, 28)}
-                    {l.destinationUrl.replace(/^https?:\/\//, "").length > 28 ? "…" : ""}
-                  </Link>
-                ),
-              },
-              {
                 id: "clicks",
                 header: "Clicks",
                 cell: (l) => (
