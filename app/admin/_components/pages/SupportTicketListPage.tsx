@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Table, { TableProps } from "@cloudscape-design/components/table"
 import Box from "@cloudscape-design/components/box"
@@ -13,6 +13,7 @@ import StatusIndicator from "@cloudscape-design/components/status-indicator"
 import Badge from "@cloudscape-design/components/badge"
 import { useSupportTicketStore } from "@/app/admin/_components/context/useSupportTicketStore"
 import type { SupportTicket } from "@/lib/support-tickets"
+import { useAppLayout } from "@/app/admin/_components/context/AppLayoutContext"
 
 // ─── SLA helpers ──────────────────────────────────────────────────────────────
 
@@ -85,7 +86,10 @@ const COUNTRY_OPTIONS = [
 
 export default function SupportTicketListPage() {
   const { tickets, loading } = useSupportTicketStore()
+  const { setContentType } = useAppLayout()
   const router = useRouter()
+
+  useEffect(() => { setContentType("table") }, [setContentType])
 
   const [filterText, setFilterText] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")

@@ -26,6 +26,7 @@ import { generateSlug } from "@/app/admin/_components/utils/slugUtils"
 import type { ProductDB } from "@/lib/products-db"
 import { machines53and54, machines58 } from "@/lib/machines"
 import ProductImageUploader from "@/app/admin/_components/ProductImageUploader"
+import { useAppLayout } from "@/app/admin/_components/context/AppLayoutContext"
 
 // ---------------------------------------------------------------------------
 // toFormData — reverse-maps a ProductDB into ProductFormData defaults
@@ -81,6 +82,9 @@ export default function ProductFormPage({ productId }: ProductFormPageProps) {
   const { loading, getProductById, getProductBySlug, createProduct, updateProduct } =
     useProductStore()
   const { addNotification } = useNotifications()
+  const { setContentType } = useAppLayout()
+
+  useEffect(() => { setContentType("form") }, [setContentType])
 
   const slugManuallyEdited = useRef<boolean>(false)
   const hasReset = useRef<boolean>(false)

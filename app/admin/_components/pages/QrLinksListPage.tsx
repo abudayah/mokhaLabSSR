@@ -6,6 +6,7 @@ import { useForm, get } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { CInput } from "react-hook-form-cloudscape"
+import { useAppLayout } from "@/app/admin/_components/context/AppLayoutContext"
 import Table, { TableProps } from "@cloudscape-design/components/table"
 import Box from "@cloudscape-design/components/box"
 import Button from "@cloudscape-design/components/button"
@@ -282,7 +283,10 @@ function formatLastClicked(value?: string): string {
 
 export default function QrLinksListPage() {
   const { links, loading } = useQrLinkStore()
+  const { setContentType } = useAppLayout()
   const router = useRouter()
+
+  useEffect(() => { setContentType("table") }, [setContentType])
 
   const [sortingColumn, setSortingColumn] = useState<TableProps.SortingColumn<QrLink>>({ sortingField: "createdAt" })
   const [sortingDescending, setSortingDescending] = useState(true)

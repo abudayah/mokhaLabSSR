@@ -5,6 +5,7 @@ import { QrLinkStoreProvider } from "./context/QrLinkStoreContext"
 import { SupportTicketStoreProvider } from "./context/SupportTicketStoreContext"
 import { ProductStoreProvider } from "./context/ProductStoreContext"
 import { NotificationProvider } from "./context/NotificationContext"
+import { AppLayoutProvider } from "./context/AppLayoutContext"
 
 /**
  * Wraps all admin pages with the required context providers.
@@ -17,7 +18,9 @@ export default function AdminProviders({ children }: { children: React.ReactNode
       <ProductStoreProvider>
         <QrLinkStoreProvider>
           <SupportTicketStoreProvider>
-            <NotificationProvider>{children}</NotificationProvider>
+            <NotificationProvider>
+              <AppLayoutProvider>{children}</AppLayoutProvider>
+            </NotificationProvider>
           </SupportTicketStoreProvider>
         </QrLinkStoreProvider>
       </ProductStoreProvider>

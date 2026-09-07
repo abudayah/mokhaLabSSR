@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Table, { TableProps } from "@cloudscape-design/components/table"
 import Box from "@cloudscape-design/components/box"
@@ -13,6 +13,7 @@ import { useBlogPostStore } from "@/app/admin/_components/context/useBlogPostSto
 import { useNotifications } from "@/app/admin/_components/context/NotificationContext"
 import DeleteConfirmModal from "@/app/admin/_components/DeleteConfirmModal"
 import type { BlogPost } from "@/lib/blog-posts"
+import { useAppLayout } from "@/app/admin/_components/context/AppLayoutContext"
 
 type SortField = "title" | "date"
 
@@ -50,7 +51,10 @@ const columnDefinitions: TableProps.ColumnDefinition<BlogPost>[] = [
 export default function BlogListPage() {
   const { posts, loading, deletePost } = useBlogPostStore()
   const { addNotification } = useNotifications()
+  const { setContentType } = useAppLayout()
   const router = useRouter()
+
+  useEffect(() => { setContentType("table") }, [setContentType])
 
   const [filterText, setFilterText] = useState("")
   const [sortingColumn, setSortingColumn] = useState<TableProps.SortingColumn<BlogPost>>({

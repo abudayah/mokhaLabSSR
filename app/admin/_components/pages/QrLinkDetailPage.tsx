@@ -34,6 +34,7 @@ import {
   parseHourDistribution,
   type QrLink,
 } from "@/lib/qr-links"
+import { useAppLayout } from "@/app/admin/_components/context/AppLayoutContext"
 
 const BASE_URL = "https://mokhalab.com"
 
@@ -176,6 +177,9 @@ function EditQrLinkModal({ link, onDismiss }: { link: QrLink; onDismiss: () => v
 export default function QrLinkDetailPage({ id }: { id: string }) {
   const { getLinkById, fetchMetricSummaries } = useQrLinkStore()
   const link = getLinkById(id)
+  const { setContentType } = useAppLayout()
+
+  useEffect(() => { setContentType("default") }, [setContentType])
 
   const [summaries, setSummaries] = useState<ClickMetricSummary[]>([])
   const [metricsLoading, setMetricsLoading] = useState(true)

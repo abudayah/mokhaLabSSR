@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useForm, get, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -27,6 +27,7 @@ import { useNotifications } from "@/app/admin/_components/context/NotificationCo
 import { S3Image } from "@/components/S3Image"
 import type { SupportTicket, ResponseLogEntry, CallLogEntry } from "@/lib/support-tickets"
 import { STATUS_LABELS } from "@/lib/support-tickets"
+import { useAppLayout } from "@/app/admin/_components/context/AppLayoutContext"
 
 // ─── Status config ────────────────────────────────────────────────────────────
 
@@ -298,7 +299,10 @@ function AssignModal({ ticket, onDismiss }: { ticket: SupportTicket; onDismiss: 
 export default function SupportTicketDetailPage({ id }: { id: string }) {
   const { getTicketById, updateTicketStatus, saveInternalNotes } = useSupportTicketStore()
   const { addNotification } = useNotifications()
+  const { setContentType } = useAppLayout()
   const router = useRouter()
+
+  useEffect(() => { setContentType("default") }, [setContentType])
 
   const ticket = getTicketById(id)
 

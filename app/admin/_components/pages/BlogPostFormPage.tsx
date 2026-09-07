@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useForm, get, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -18,6 +19,7 @@ import { useBlogPostStore } from "@/app/admin/_components/context/useBlogPostSto
 import { useNotifications } from "@/app/admin/_components/context/NotificationContext"
 import RichTextEditor from "@/app/admin/_components/RichTextEditor"
 import ImageUploader from "@/app/admin/_components/ImageUploader"
+import { useAppLayout } from "@/app/admin/_components/context/AppLayoutContext"
 
 const cleanHTML = (htmlString: string) => {
   const parser = new DOMParser()
@@ -44,7 +46,10 @@ export default function BlogPostFormPage({ postId }: BlogPostFormPageProps) {
 
   const { getPostById, createPost, updatePost } = useBlogPostStore()
   const { addNotification } = useNotifications()
+  const { setContentType } = useAppLayout()
   const router = useRouter()
+
+  useEffect(() => { setContentType("form") }, [setContentType])
 
   const existingPost = isEditMode && postId ? getPostById(postId) : undefined
 

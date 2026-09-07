@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Table, { TableProps } from "@cloudscape-design/components/table"
 import Box from "@cloudscape-design/components/box"
@@ -12,6 +12,7 @@ import { useProductStore } from "@/app/admin/_components/context/useProductStore
 import { useNotifications } from "@/app/admin/_components/context/NotificationContext"
 import DeleteConfirmModal from "@/app/admin/_components/DeleteConfirmModal"
 import type { ProductDB } from "@/lib/products-db"
+import { useAppLayout } from "@/app/admin/_components/context/AppLayoutContext"
 
 const columnDefinitions: TableProps.ColumnDefinition<ProductDB>[] = [
   {
@@ -46,7 +47,10 @@ const columnDefinitions: TableProps.ColumnDefinition<ProductDB>[] = [
 export default function ProductListPage() {
   const { products, loading, deleteProducts } = useProductStore()
   const { addNotification } = useNotifications()
+  const { setContentType } = useAppLayout()
   const router = useRouter()
+
+  useEffect(() => { setContentType("table") }, [setContentType])
 
   const [selectedItems, setSelectedItems] = useState<ProductDB[]>([])
   const [deleteModalVisible, setDeleteModalVisible] = useState(false)

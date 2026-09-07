@@ -7,6 +7,7 @@ import SideNavigation from "@cloudscape-design/components/side-navigation"
 import Flashbar from "@cloudscape-design/components/flashbar"
 import { signOut } from "aws-amplify/auth"
 import { useNotifications } from "./context/NotificationContext"
+import { useAppLayout } from "./context/AppLayoutContext"
 
 const TOP_NAV_ID = "admin-top-nav"
 
@@ -16,6 +17,7 @@ interface AdminLayoutProps {
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
   const { notifications } = useNotifications()
+  const { contentType } = useAppLayout()
   const router = useRouter()
   const pathname = usePathname()
 
@@ -63,7 +65,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       <AppLayout
         toolsHide
         stickyNotifications
-        contentType="default"
+        contentType={contentType}
         headerSelector={`#${TOP_NAV_ID}`}
         navigation={
           <SideNavigation
