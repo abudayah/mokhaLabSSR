@@ -211,7 +211,7 @@ export default function BlogPostFormPage({ postId }: BlogPostFormPageProps) {
               {/* Status */}
               <FormField
                 label="Status"
-                description="Draft posts are only visible in the admin. Published posts appear on the public blog."
+                description="Draft posts are only visible to admins. Published posts appear on the public blog."
               >
                 <Controller
                   name="status"
@@ -223,7 +223,7 @@ export default function BlogPostFormPage({ postId }: BlogPostFormPageProps) {
                         field.onChange(detail.checked ? "published" : "draft")
                       }
                     >
-                      {field.value === "published" ? "Published" : "Draft"}
+                      Published
                     </Toggle>
                   )}
                 />

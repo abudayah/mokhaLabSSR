@@ -62,6 +62,24 @@ const LIST_POSTS_QUERY = /* GraphQL */ `
   }
 `
 
+const LIST_ALL_POSTS_QUERY = /* GraphQL */ `
+  query ListAllBlogPosts {
+    listBlogPosts {
+      items {
+        id
+        slug
+        title
+        subtitle
+        date
+        author
+        body
+        featuredImage
+        status
+      }
+    }
+  }
+`
+
 interface ListBlogPostsData {
   listBlogPosts: {
     items: {
@@ -88,7 +106,7 @@ function toPost(item: ListBlogPostsData["listBlogPosts"]["items"][number]): Blog
     author: item.author,
     body: item.body,
     featuredImage: item.featuredImage ?? undefined,
-    status: "published",
+    status: item.status === "published" ? "published" : "draft",
   }
 }
 
@@ -99,8 +117,27 @@ export async function getPublishedPosts(revalidate = 60): Promise<BlogPost[]> {
   return items.map(toPost).sort((a, b) => b.date.localeCompare(a.date))
 }
 
+/**
+ * Fetch ALL posts (draft + published) sorted newest first.
+ * Only used for admin preview — always fetches fresh (no-store).
+ */
+export async function getAllPosts(): Promise<BlogPost[]> {
+  const data = await appsync<ListBlogPostsData>(LIST_ALL_POSTS_QUERY, undefined, 0)
+  const items = data?.listBlogPosts?.items ?? []
+  return items.map(toPost).sort((a, b) => b.date.localeCompare(a.date))
+}
+
 /** Fetch a single published post by slug. Returns null if not found. */
 export async function getPublishedPost(slug: string, revalidate = 60): Promise<BlogPost | null> {
   const posts = await getPublishedPosts(revalidate)
+  return posts.find((p) => p.slug === slug) ?? null
+}
+
+/**
+ * Fetch any post (draft or published) by slug.
+ * Used for admin preview — always fetches fresh.
+ */
+export async function getAnyPost(slug: string): Promise<BlogPost | null> {
+  const posts = await getAllPosts()
   return posts.find((p) => p.slug === slug) ?? null
 }

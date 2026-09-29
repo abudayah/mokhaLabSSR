@@ -1,10 +1,13 @@
+import { cookies } from "next/headers"
 import { notFound } from "next/navigation"
 import type { Metadata } from "next"
 import Link from "next/link"
 import type { BlogPost } from "@/lib/blog-posts"
 import { estimateReadTime } from "@/lib/blog-posts"
 import { resolveImageUrl, resolveOgImageUrl, SITE_URL } from "@/lib/image-url"
-import { getPublishedPosts, getPublishedPost } from "@/lib/blog-api"
+import { getPublishedPosts, getPublishedPost, getAllPosts, getAnyPost } from "@/lib/blog-api"
+import { runWithAmplifyServerContext } from "@/utils/amplifyServerUtils"
+import { fetchAuthSession } from "aws-amplify/auth/server"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
 import { S3Image } from "@/components/S3Image"
@@ -18,7 +21,21 @@ export const revalidate = 60
 
 const DEFAULT_IMAGE = `${SITE_URL}/images/hero.webp`
 
-// Tell Next.js which slugs to pre-render at build time
+async function isAdmin(): Promise<boolean> {
+  try {
+    return await runWithAmplifyServerContext({
+      nextServerContext: { cookies },
+      operation: async (ctx) => {
+        const session = await fetchAuthSession(ctx)
+        return session.tokens !== undefined
+      },
+    })
+  } catch {
+    return false
+  }
+}
+
+// Pre-render published slugs at build time only
 export async function generateStaticParams() {
   const posts = await getPublishedPosts()
   return posts.map((p) => ({ slug: p.slug }))
@@ -29,6 +46,7 @@ export async function generateMetadata({
 }: {
   params: { slug: string }
 }): Promise<Metadata> {
+  // Metadata uses published data only (no auth context available here)
   const post = await getPublishedPost(params.slug)
   if (!post) return { title: "Post not found" }
 
@@ -76,17 +94,22 @@ function pickRandom<T>(arr: T[], count: number, excludeIndex: number): T[] {
 }
 
 export default async function BlogPostPage({ params }: { params: { slug: string } }) {
+  const admin = await isAdmin()
+
   const [post, allPosts] = await Promise.all([
-    getPublishedPost(params.slug),
-    getPublishedPosts(),
+    admin ? getAnyPost(params.slug) : getPublishedPost(params.slug),
+    admin ? getAllPosts() : getPublishedPosts(),
   ])
 
   if (!post) notFound()
 
+  const isDraft = post.status === "draft"
+
   const suggestions = pickRandom(
-    allPosts,
+    // Only suggest published posts in the "you might also enjoy" section
+    allPosts.filter((p) => p.status === "published" && p.slug !== params.slug),
     2,
-    allPosts.findIndex((p) => p.slug === params.slug)
+    -1
   )
 
   const bodyHtml = post.body
@@ -127,9 +150,18 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
               ← All Posts
             </Link>
 
+            {isDraft && (
+              <div className="mb-6 px-4 py-3 rounded-lg border border-amber-300 bg-amber-50 text-amber-800 text-sm font-medium">
+                This post is a draft — only visible to admins.
+              </div>
+            )}
+
             <article>
               <header className="mb-8">
                 <h1 className="font-[family-name:var(--blog-serif)] text-4xl md:text-5xl font-bold mb-4">
+                  {isDraft && (
+                    <span className="text-amber-600 mr-2">[DRAFT]</span>
+                  )}
                   {post.title}
                 </h1>
 

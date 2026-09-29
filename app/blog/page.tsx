@@ -1,12 +1,16 @@
+import { cookies } from "next/headers"
 import type { Metadata } from "next"
 import { SITE_URL } from "@/lib/image-url"
-import { getPublishedPosts } from "@/lib/blog-api"
+import { getPublishedPosts, getAllPosts } from "@/lib/blog-api"
+import { runWithAmplifyServerContext } from "@/utils/amplifyServerUtils"
+import { fetchAuthSession } from "aws-amplify/auth/server"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
 import { HeroPost } from "@/components/blog/hero-post"
 import { PostCard } from "@/components/blog/post-card"
+import type { BlogPost } from "@/lib/blog-posts"
 
-// Revalidate every 60 seconds (ISR) — plain fetch in blog-api.ts handles this
+// Revalidate every 60 seconds for public readers; admins get force-dynamic below
 export const revalidate = 60
 
 export const metadata: Metadata = {
@@ -40,8 +44,30 @@ export const metadata: Metadata = {
   },
 }
 
+async function isAdmin(): Promise<boolean> {
+  try {
+    return await runWithAmplifyServerContext({
+      nextServerContext: { cookies },
+      operation: async (ctx) => {
+        const session = await fetchAuthSession(ctx)
+        return session.tokens !== undefined
+      },
+    })
+  } catch {
+    return false
+  }
+}
+
+function applyDraftPrefix(posts: BlogPost[]): BlogPost[] {
+  return posts.map((p) =>
+    p.status === "draft" ? { ...p, title: `[DRAFT] ${p.title}` } : p
+  )
+}
+
 export default async function BlogListPage() {
-  const posts = await getPublishedPosts()
+  const admin = await isAdmin()
+  const raw = admin ? await getAllPosts() : await getPublishedPosts()
+  const posts = admin ? applyDraftPrefix(raw) : raw
 
   return (
     <div className="min-h-screen blog-bg">
