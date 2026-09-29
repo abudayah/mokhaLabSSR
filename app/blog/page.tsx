@@ -1,17 +1,13 @@
-import { generateClient } from "aws-amplify/data"
-import { Amplify } from "aws-amplify"
 import type { Metadata } from "next"
 import { SITE_URL } from "@/lib/image-url"
-import type { Schema } from "@/amplify/data/resource"
-import type { BlogPost } from "@/lib/blog-posts"
-import outputs from "@/amplify_outputs.json"
+import { getPublishedPosts } from "@/lib/blog-api"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
 import { HeroPost } from "@/components/blog/hero-post"
 import { PostCard } from "@/components/blog/post-card"
 
-// Configure Amplify for server-side data fetching
-Amplify.configure(outputs, { ssr: true })
+// Revalidate every 60 seconds (ISR) — plain fetch in blog-api.ts handles this
+export const revalidate = 60
 
 export const metadata: Metadata = {
   title: "Blog",
@@ -44,31 +40,8 @@ export const metadata: Metadata = {
   },
 }
 
-async function getPosts(): Promise<BlogPost[]> {
-  try {
-    const client = generateClient<Schema>()
-    const { data } = await client.models.BlogPost.list()
-    const posts: BlogPost[] = (data ?? [])
-      .filter((item) => item.status === "published")
-      .map((item) => ({
-        id: item.id,
-        slug: item.slug,
-        title: item.title,
-        subtitle: item.subtitle ?? undefined,
-        date: item.date,
-        author: item.author,
-        body: item.body,
-        featuredImage: item.featuredImage ?? undefined,
-        status: "published" as const,
-      }))
-    return posts.sort((a, b) => b.date.localeCompare(a.date))
-  } catch {
-    return []
-  }
-}
-
 export default async function BlogListPage() {
-  const posts = await getPosts()
+  const posts = await getPublishedPosts()
 
   return (
     <div className="min-h-screen blog-bg">

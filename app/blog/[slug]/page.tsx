@@ -1,13 +1,10 @@
 import { notFound } from "next/navigation"
-import { generateClient } from "aws-amplify/data"
-import { Amplify } from "aws-amplify"
 import type { Metadata } from "next"
 import Link from "next/link"
-import type { Schema } from "@/amplify/data/resource"
 import type { BlogPost } from "@/lib/blog-posts"
 import { estimateReadTime } from "@/lib/blog-posts"
 import { resolveImageUrl, resolveOgImageUrl, SITE_URL } from "@/lib/image-url"
-import outputs from "@/amplify_outputs.json"
+import { getPublishedPosts, getPublishedPost } from "@/lib/blog-api"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
 import { S3Image } from "@/components/S3Image"
@@ -16,52 +13,23 @@ import { PostCard } from "@/components/blog/post-card"
 import { ReadingProgressBar } from "@/components/blog/reading-progress-bar"
 import { ScrollToTopButton } from "@/components/blog/scroll-to-top-button"
 
-Amplify.configure(outputs, { ssr: true })
+// Revalidate every 60 seconds (ISR)
+export const revalidate = 60
 
 const DEFAULT_IMAGE = `${SITE_URL}/images/hero.webp`
 
-async function getAllPosts(): Promise<BlogPost[]> {
-  try {
-    const client = generateClient<Schema>()
-    const { data } = await client.models.BlogPost.list()
-    return (data ?? [])
-      .filter((item) => item.status === "published")
-      .map((item) => ({
-        id: item.id,
-        slug: item.slug,
-        title: item.title,
-        subtitle: item.subtitle ?? undefined,
-        date: item.date,
-        author: item.author,
-        body: item.body,
-        featuredImage: item.featuredImage ?? undefined,
-        status: "published" as const,
-      }))
-  } catch {
-    return []
-  }
-}
-
-async function getPost(slug: string): Promise<BlogPost | null> {
-  const all = await getAllPosts()
-  return all.find((p) => p.slug === slug) ?? null
-}
-
 // Tell Next.js which slugs to pre-render at build time
 export async function generateStaticParams() {
-  const posts = await getAllPosts()
+  const posts = await getPublishedPosts()
   return posts.map((p) => ({ slug: p.slug }))
 }
-
-// Revalidate every 60 seconds (ISR)
-export const revalidate = 60
 
 export async function generateMetadata({
   params,
 }: {
   params: { slug: string }
 }): Promise<Metadata> {
-  const post = await getPost(params.slug)
+  const post = await getPublishedPost(params.slug)
   if (!post) return { title: "Post not found" }
 
   const title = `${post.title} | mokhaLab`
@@ -108,23 +76,21 @@ function pickRandom<T>(arr: T[], count: number, excludeIndex: number): T[] {
 }
 
 export default async function BlogPostPage({ params }: { params: { slug: string } }) {
-  const all = await getAllPosts()
-  const post = all.find((p) => p.slug === params.slug)
+  const [post, allPosts] = await Promise.all([
+    getPublishedPost(params.slug),
+    getPublishedPosts(),
+  ])
 
   if (!post) notFound()
 
   const suggestions = pickRandom(
-    all,
+    allPosts,
     2,
-    all.findIndex((p) => p.slug === params.slug)
+    allPosts.findIndex((p) => p.slug === params.slug)
   )
 
-  // Server-side sanitization — strip tags server-side; DOMPurify runs client-side only
-  // We trust our own CMS content, so we render HTML directly.
-  // If untrusted HTML is ever possible, add server-side sanitization here.
   const bodyHtml = post.body
 
-  // JSON-LD structured data
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Article",
