@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import Table, { TableProps } from "@cloudscape-design/components/table"
 import Box from "@cloudscape-design/components/box"
 import Button from "@cloudscape-design/components/button"
+import ButtonDropdown from "@cloudscape-design/components/button-dropdown"
 import CollectionPreferences, { CollectionPreferencesProps } from "@cloudscape-design/components/collection-preferences"
 import Header from "@cloudscape-design/components/header"
 import TextFilter from "@cloudscape-design/components/text-filter"
@@ -88,7 +89,7 @@ const COUNTRY_OPTIONS = [
 
 const ALL_COLUMN_IDS = [
   "ticketId", "customerName", "caseType", "productName",
-  "country", "status", "submissionTimestamp", "assignedAgent", "sla",
+  "country", "status", "submissionTimestamp", "assignedAgent", "sla", "actions",
 ]
 
 const COLUMN_DISPLAY: CollectionPreferencesProps.VisibleContentOption[] = [
@@ -101,6 +102,7 @@ const COLUMN_DISPLAY: CollectionPreferencesProps.VisibleContentOption[] = [
   { id: "submissionTimestamp", label: "Submitted At" },
   { id: "assignedAgent", label: "Assigned To" },
   { id: "sla", label: "SLA" },
+  { id: "actions", label: "Actions", editable: false },
 ]
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -176,8 +178,7 @@ export default function SupportTicketListPage() {
       isRowHeader: true,
       width: columnWidths["ticketId"],
       minWidth: 120,
-    },
-    {
+    },    {
       id: "customerName",
       header: "Name",
       cell: (item) => item.customerName,
@@ -265,6 +266,27 @@ export default function SupportTicketListPage() {
         ),
       width: columnWidths["sla"],
       minWidth: 100,
+    },
+    {
+      id: "actions",
+      header: "Actions",
+      cell: (item) => (
+        <ButtonDropdown
+          variant="inline-icon"
+          ariaLabel={`Actions for ${item.ticketId}`}
+          expandToViewport
+          items={[
+            { id: "view", text: "View details", iconName: "zoom-in" },
+          ]}
+          onItemClick={({ detail }) => {
+            if (detail.id === "view") {
+              router.push(`/admin/support/${item.id}`)
+            }
+          }}
+        />
+      ),
+      width: columnWidths["actions"] ?? 80,
+      minWidth: 80,
     },
   ]
 

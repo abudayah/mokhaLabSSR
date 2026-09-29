@@ -5,10 +5,10 @@ import { useRouter } from "next/navigation"
 import Table, { TableProps } from "@cloudscape-design/components/table"
 import Box from "@cloudscape-design/components/box"
 import Button from "@cloudscape-design/components/button"
+import ButtonDropdown from "@cloudscape-design/components/button-dropdown"
 import CollectionPreferences, { CollectionPreferencesProps } from "@cloudscape-design/components/collection-preferences"
 import Header from "@cloudscape-design/components/header"
 import SpaceBetween from "@cloudscape-design/components/space-between"
-import Link from "@cloudscape-design/components/link"
 import { useProductStore } from "@/app/admin/_components/context/useProductStore"
 import { useNotifications } from "@/app/admin/_components/context/NotificationContext"
 import DeleteConfirmModal from "@/app/admin/_components/DeleteConfirmModal"
@@ -18,26 +18,23 @@ import { useAppLayout } from "@/app/admin/_components/context/AppLayoutContext"
 
 // ─── Column config ────────────────────────────────────────────────────────────
 
-const ALL_COLUMN_IDS = ["name", "slug", "priceUSD", "priceCAD"]
+const ALL_COLUMN_IDS = ["name", "slug", "priceUSD", "priceCAD", "actions"]
 
 const COLUMN_DISPLAY: CollectionPreferencesProps.VisibleContentOption[] = [
   { id: "name", label: "Name", editable: false },
   { id: "slug", label: "Slug" },
   { id: "priceUSD", label: "USD Price" },
   { id: "priceCAD", label: "CAD Price" },
+  { id: "actions", label: "Actions", editable: false },
 ]
 
-// ─── Static column definitions ────────────────────────────────────────────────
+// ─── Column definitions ───────────────────────────────────────────────────────
 
 const BASE_COLUMN_DEFS: TableProps.ColumnDefinition<ProductDB>[] = [
   {
     id: "name",
     header: "Name",
-    cell: (item) => (
-      <Link href={`/products/${item.slug}`} external>
-        {item.name}
-      </Link>
-    ),
+    cell: () => null, // overridden below — navigates to edit
     sortingField: "name",
     isRowHeader: true,
   },
@@ -58,6 +55,11 @@ const BASE_COLUMN_DEFS: TableProps.ColumnDefinition<ProductDB>[] = [
     cell: (item) => `$${item.priceCAD.toFixed(2)}`,
     sortingField: "priceCAD",
   },
+  {
+    id: "actions",
+    header: "Actions",
+    cell: () => null, // overridden below
+  },
 ]
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -70,8 +72,7 @@ export default function ProductListPage() {
 
   useEffect(() => { setContentType("table") }, [setContentType])
 
-  const [selectedItems, setSelectedItems] = useState<ProductDB[]>([])
-  const [deleteModalVisible, setDeleteModalVisible] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<ProductDB | null>(null)
   const [deleting, setDeleting] = useState(false)
 
   const {
@@ -87,8 +88,6 @@ export default function ProductListPage() {
     allColumnIds: ALL_COLUMN_IDS,
   })
 
-  const hasSelection = selectedItems.length > 0
-
   // Client-side sort (store returns unsorted data)
   const sorted = useMemo(() => {
     const field = (sortingColumn.sortingField ?? "name") as keyof ProductDB
@@ -100,35 +99,71 @@ export default function ProductListPage() {
     })
   }, [products, sortingColumn, sortingDescending])
 
-  const columnDefinitions = BASE_COLUMN_DEFS.filter((col) =>
-    visibleColumnIds.includes(col.id!)
-  )
+  const columnDefinitions = BASE_COLUMN_DEFS
+    .map((col) => {
+      if (col.id === "name") {
+        return {
+          ...col,
+          cell: (item: ProductDB) => (
+            <Button
+              variant="inline-link"
+              ariaLabel={`Edit ${item.name}`}
+              onClick={() => router.push(`/admin/products/${item.id}/edit`)}
+            >
+              {item.name}
+            </Button>
+          ),
+        }
+      }
+      if (col.id === "actions") {
+        return {
+          ...col,
+          cell: (item: ProductDB) => (
+            <ButtonDropdown
+              variant="inline-icon"
+              ariaLabel={`Actions for ${item.name}`}
+              expandToViewport
+              items={[
+                { id: "view", text: "View on site", iconName: "external" },
+                { id: "edit", text: "Edit", iconName: "edit" },
+                { id: "delete", text: "Delete", iconName: "remove" },
+              ]}
+              onItemClick={({ detail }) => {
+                if (detail.id === "view") {
+                  window.open(`/products/${item.slug}`, "_blank")
+                } else if (detail.id === "edit") {
+                  router.push(`/admin/products/${item.id}/edit`)
+                } else if (detail.id === "delete") {
+                  setDeleteTarget(item)
+                }
+              }}
+            />
+          ),
+        }
+      }
+      return col
+    })
+    .filter((col) => visibleColumnIds.includes(col.id!))
 
   async function handleDeleteConfirm() {
-    if (selectedItems.length === 0) return
+    if (!deleteTarget) return
     setDeleting(true)
-    const ids = selectedItems.map((p) => p.id)
-    const names = selectedItems.map((p) => p.name).join(", ")
     try {
-      await deleteProducts(ids)
+      await deleteProducts([deleteTarget.id])
       addNotification({
         type: "success",
-        content:
-          selectedItems.length === 1
-            ? `"${selectedItems[0].name}" was deleted successfully.`
-            : `${selectedItems.length} products were deleted successfully.`,
+        content: `"${deleteTarget.name}" was deleted successfully.`,
         dismissible: true,
       })
-      setSelectedItems([])
+      setDeleteTarget(null)
     } catch {
       addNotification({
         type: "error",
-        content: `Failed to delete ${selectedItems.length === 1 ? `"${names}"` : `${selectedItems.length} products`}. Please try again.`,
+        content: `Failed to delete "${deleteTarget.name}". Please try again.`,
         dismissible: true,
       })
     } finally {
       setDeleting(false)
-      setDeleteModalVisible(false)
     }
   }
 
@@ -142,9 +177,6 @@ export default function ProductListPage() {
         trackBy="id"
         columnDefinitions={columnDefinitions}
         items={sorted}
-        selectionType="multi"
-        selectedItems={selectedItems}
-        onSelectionChange={({ detail }) => setSelectedItems(detail.selectedItems)}
         sortingColumn={sortingColumn}
         sortingDescending={sortingDescending}
         onSortingChange={({ detail }) => onSortingChange(detail)}
@@ -166,29 +198,9 @@ export default function ProductListPage() {
         header={
           <Header
             variant="awsui-h1-sticky"
-            counter={
-              selectedItems.length > 0
-                ? `(${selectedItems.length}/${products.length})`
-                : `(${products.length})`
-            }
+            counter={`(${products.length})`}
             actions={
               <SpaceBetween direction="horizontal" size="xs">
-                <Button
-                  disabled={!hasSelection}
-                  onClick={() => {
-                    if (selectedItems.length > 0) {
-                      router.push(`/admin/products/${selectedItems[0].id}/edit`)
-                    }
-                  }}
-                >
-                  Edit
-                </Button>
-                <Button
-                  disabled={!hasSelection}
-                  onClick={() => setDeleteModalVisible(true)}
-                >
-                  Delete
-                </Button>
                 <Button
                   variant="primary"
                   onClick={() => router.push("/admin/products/new")}
@@ -222,15 +234,13 @@ export default function ProductListPage() {
         }}
       />
 
-      {deleteModalVisible && selectedItems.length > 0 && (
+      {deleteTarget && (
         <DeleteConfirmModal
-          visible={deleteModalVisible}
-          itemName={selectedItems[0].name}
-          itemCount={selectedItems.length > 1 ? selectedItems.length : undefined}
-          itemNames={selectedItems.length > 1 ? selectedItems.map((p) => p.name) : undefined}
+          visible={true}
+          itemName={deleteTarget.name}
           resourceType="product"
           onConfirm={handleDeleteConfirm}
-          onDismiss={() => !deleting && setDeleteModalVisible(false)}
+          onDismiss={() => !deleting && setDeleteTarget(null)}
           loading={deleting}
         />
       )}

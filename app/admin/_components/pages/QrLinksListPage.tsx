@@ -328,8 +328,7 @@ export default function QrLinksListPage() {
       isRowHeader: true,
       width: columnWidths["label"],
       minWidth: 120,
-    },
-    {
+    },    {
       id: "shortLink",
       header: "Short Link",
       cell: (item) => (
@@ -383,12 +382,18 @@ export default function QrLinksListPage() {
           ariaLabel={`Actions for ${item.label ?? item.code}`}
           expandToViewport
           items={[
+            { id: "view", text: "View details", iconName: "zoom-in" },
+            { id: "shortlink", text: "View short link", iconName: "external" },
             { id: "edit", text: "Edit", iconName: "edit" },
             { id: "download", text: "Download QR Code", iconName: "download" },
             { id: "delete", text: "Delete", iconName: "remove" },
           ]}
           onItemClick={async ({ detail }) => {
-            if (detail.id === "edit") {
+            if (detail.id === "view") {
+              router.push(`/admin/qr-links/${item.id}`)
+            } else if (detail.id === "shortlink") {
+              window.open(`${BASE_URL}/go/${item.code}`, "_blank")
+            } else if (detail.id === "edit") {
               setEditTarget(item)
             } else if (detail.id === "download") {
               const svg = await generateQrSvg(item.code)

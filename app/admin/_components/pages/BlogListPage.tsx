@@ -5,13 +5,13 @@ import { useRouter } from "next/navigation"
 import Table, { TableProps } from "@cloudscape-design/components/table"
 import Box from "@cloudscape-design/components/box"
 import Button from "@cloudscape-design/components/button"
+import ButtonDropdown from "@cloudscape-design/components/button-dropdown"
 import CollectionPreferences, { CollectionPreferencesProps } from "@cloudscape-design/components/collection-preferences"
 import Header from "@cloudscape-design/components/header"
 import TextFilter from "@cloudscape-design/components/text-filter"
 import Select from "@cloudscape-design/components/select"
 import SpaceBetween from "@cloudscape-design/components/space-between"
 import StatusIndicator from "@cloudscape-design/components/status-indicator"
-import Link from "@cloudscape-design/components/link"
 import { useBlogPostStore } from "@/app/admin/_components/context/useBlogPostStore"
 import { useNotifications } from "@/app/admin/_components/context/NotificationContext"
 import DeleteConfirmModal from "@/app/admin/_components/DeleteConfirmModal"
@@ -47,11 +47,7 @@ const BASE_COLUMN_DEFS: TableProps.ColumnDefinition<BlogPost>[] = [
   {
     id: "title",
     header: "Title",
-    cell: (item) => (
-      <Link href={`/blog/${item.slug}`} external>
-        {item.title}
-      </Link>
-    ),
+    cell: () => null, // overridden below — navigates to edit
     sortingField: "title",
     isRowHeader: true,
   },
@@ -76,7 +72,7 @@ const BASE_COLUMN_DEFS: TableProps.ColumnDefinition<BlogPost>[] = [
         <StatusIndicator type="stopped">Draft</StatusIndicator>
       ),
     sortingField: "status",
-  },  
+  },
   {
     id: "actions",
     header: "Actions",
@@ -153,29 +149,46 @@ export default function BlogListPage() {
     }
   }
 
-  // Inject router into the actions column, then filter to visible
+  // Inject router into title + actions columns, then filter to visible
   const columnDefinitions = BASE_COLUMN_DEFS
     .map((col) => {
+      if (col.id === "title") {
+        return {
+          ...col,
+          cell: (item: BlogPost) => (
+            <Button
+              variant="inline-link"
+              ariaLabel={`Edit ${item.title}`}
+              onClick={() => router.push(`/admin/blog/${item.id}/edit`)}
+            >
+              {item.title}
+            </Button>
+          ),
+        }
+      }
       if (col.id === "actions") {
         return {
           ...col,
           cell: (item: BlogPost) => (
-            <SpaceBetween direction="horizontal" size="xs">
-              <Button
-                variant="inline-link"
-                ariaLabel={`Edit ${item.title}`}
-                onClick={() => router.push(`/admin/blog/${item.id}/edit`)}
-              >
-                Edit
-              </Button>
-              <Button
-                variant="inline-link"
-                ariaLabel={`Delete ${item.title}`}
-                onClick={() => setDeleteTarget(item)}
-              >
-                Delete
-              </Button>
-            </SpaceBetween>
+            <ButtonDropdown
+              variant="inline-icon"
+              ariaLabel={`Actions for ${item.title}`}
+              expandToViewport
+              items={[
+                { id: "view", text: "View on blog", iconName: "external" },
+                { id: "edit", text: "Edit", iconName: "edit" },
+                { id: "delete", text: "Delete", iconName: "remove" },
+              ]}
+              onItemClick={({ detail }) => {
+                if (detail.id === "view") {
+                  window.open(`/blog/${item.slug}`, "_blank")
+                } else if (detail.id === "edit") {
+                  router.push(`/admin/blog/${item.id}/edit`)
+                } else if (detail.id === "delete") {
+                  setDeleteTarget(item)
+                }
+              }}
+            />
           ),
         }
       }
