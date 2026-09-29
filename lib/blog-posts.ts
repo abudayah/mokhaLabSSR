@@ -1,3 +1,5 @@
+export type BlogPostStatus = "draft" | "published"
+
 export interface BlogPost {
   /** DynamoDB-generated string ID */
   id: string
@@ -15,6 +17,8 @@ export interface BlogPost {
   body: string
   /** Optional S3 key or URL for the hero image */
   featuredImage?: string
+  /** Visibility status — defaults to "draft" on create */
+  status: BlogPostStatus
 }
 
 /**
@@ -35,6 +39,7 @@ export const seedPosts: Omit<BlogPost, "id">[] = [
     subtitle: "The philosophy behind mokhaLab tools",
     date: "2025-07-10",
     author: "mokhaLab",
+    status: "published",
     body: `<p>Every mokhaLab tool begins with a single question: what does this moment deserve?</p>`,
   },
   {
@@ -43,6 +48,7 @@ export const seedPosts: Omit<BlogPost, "id">[] = [
     subtitle: "A guide to intentional brewing",
     date: "2025-06-22",
     author: "mokhaLab",
+    status: "published",
     body: `<p>There is a version of the morning that belongs entirely to you.</p>`,
   },
   {
@@ -51,6 +57,7 @@ export const seedPosts: Omit<BlogPost, "id">[] = [
     subtitle: "Why the third wave was always about more than taste",
     date: "2025-05-14",
     author: "mokhaLab",
+    status: "published",
     body: `<p>Specialty coffee arrived at the same moment the world began moving fastest.</p>`,
   },
 ]

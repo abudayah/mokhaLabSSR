@@ -1,20 +1,35 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Table, { TableProps } from "@cloudscape-design/components/table"
 import Box from "@cloudscape-design/components/box"
 import Button from "@cloudscape-design/components/button"
+import CollectionPreferences, { CollectionPreferencesProps } from "@cloudscape-design/components/collection-preferences"
 import Header from "@cloudscape-design/components/header"
 import SpaceBetween from "@cloudscape-design/components/space-between"
 import Link from "@cloudscape-design/components/link"
 import { useProductStore } from "@/app/admin/_components/context/useProductStore"
 import { useNotifications } from "@/app/admin/_components/context/NotificationContext"
 import DeleteConfirmModal from "@/app/admin/_components/DeleteConfirmModal"
+import { useTablePreferences } from "@/app/admin/_components/hooks/useTablePreferences"
 import type { ProductDB } from "@/lib/products-db"
 import { useAppLayout } from "@/app/admin/_components/context/AppLayoutContext"
 
-const columnDefinitions: TableProps.ColumnDefinition<ProductDB>[] = [
+// ─── Column config ────────────────────────────────────────────────────────────
+
+const ALL_COLUMN_IDS = ["name", "slug", "priceUSD", "priceCAD"]
+
+const COLUMN_DISPLAY: CollectionPreferencesProps.VisibleContentOption[] = [
+  { id: "name", label: "Name", editable: false },
+  { id: "slug", label: "Slug" },
+  { id: "priceUSD", label: "USD Price" },
+  { id: "priceCAD", label: "CAD Price" },
+]
+
+// ─── Static column definitions ────────────────────────────────────────────────
+
+const BASE_COLUMN_DEFS: TableProps.ColumnDefinition<ProductDB>[] = [
   {
     id: "name",
     header: "Name",
@@ -41,8 +56,11 @@ const columnDefinitions: TableProps.ColumnDefinition<ProductDB>[] = [
     id: "priceCAD",
     header: "CAD Price",
     cell: (item) => `$${item.priceCAD.toFixed(2)}`,
+    sortingField: "priceCAD",
   },
 ]
+
+// ─── Component ────────────────────────────────────────────────────────────────
 
 export default function ProductListPage() {
   const { products, loading, deleteProducts } = useProductStore()
@@ -56,12 +74,35 @@ export default function ProductListPage() {
   const [deleteModalVisible, setDeleteModalVisible] = useState(false)
   const [deleting, setDeleting] = useState(false)
 
-  const [sortingColumn, setSortingColumn] = useState<TableProps.SortingColumn<ProductDB>>({
-    sortingField: "name",
+  const {
+    sortingColumn,
+    sortingDescending,
+    onSortingChange,
+    visibleColumnIds,
+    setVisibleColumnIds,
+  } = useTablePreferences<ProductDB>({
+    storageKey: "products",
+    defaultSortingField: "name",
+    defaultSortingDescending: false,
+    allColumnIds: ALL_COLUMN_IDS,
   })
-  const [sortingDescending, setSortingDescending] = useState(false)
 
   const hasSelection = selectedItems.length > 0
+
+  // Client-side sort (store returns unsorted data)
+  const sorted = useMemo(() => {
+    const field = (sortingColumn.sortingField ?? "name") as keyof ProductDB
+    return [...products].sort((a, b) => {
+      const valA = String(a[field] ?? "")
+      const valB = String(b[field] ?? "")
+      const cmp = valA.localeCompare(valB)
+      return sortingDescending ? -cmp : cmp
+    })
+  }, [products, sortingColumn, sortingDescending])
+
+  const columnDefinitions = BASE_COLUMN_DEFS.filter((col) =>
+    visibleColumnIds.includes(col.id!)
+  )
 
   async function handleDeleteConfirm() {
     if (selectedItems.length === 0) return
@@ -100,16 +141,28 @@ export default function ProductListPage() {
         loadingText="Loading products…"
         trackBy="id"
         columnDefinitions={columnDefinitions}
-        items={products}
+        items={sorted}
         selectionType="multi"
         selectedItems={selectedItems}
         onSelectionChange={({ detail }) => setSelectedItems(detail.selectedItems)}
         sortingColumn={sortingColumn}
         sortingDescending={sortingDescending}
-        onSortingChange={({ detail }) => {
-          setSortingColumn(detail.sortingColumn)
-          setSortingDescending(detail.isDescending ?? false)
-        }}
+        onSortingChange={({ detail }) => onSortingChange(detail)}
+        preferences={
+          <CollectionPreferences
+            title="Table preferences"
+            confirmLabel="Confirm"
+            cancelLabel="Cancel"
+            onConfirm={({ detail }) => {
+              if (detail.visibleContent) setVisibleColumnIds([...detail.visibleContent])
+            }}
+            visibleContentPreference={{
+              title: "Visible columns",
+              options: [{ label: "Columns", options: COLUMN_DISPLAY }],
+            }}
+            preferences={{ visibleContent: visibleColumnIds }}
+          />
+        }
         header={
           <Header
             variant="awsui-h1-sticky"

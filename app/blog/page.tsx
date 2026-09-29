@@ -48,16 +48,19 @@ async function getPosts(): Promise<BlogPost[]> {
   try {
     const client = generateClient<Schema>()
     const { data } = await client.models.BlogPost.list()
-    const posts: BlogPost[] = (data ?? []).map((item) => ({
-      id: item.id,
-      slug: item.slug,
-      title: item.title,
-      subtitle: item.subtitle ?? undefined,
-      date: item.date,
-      author: item.author,
-      body: item.body,
-      featuredImage: item.featuredImage ?? undefined,
-    }))
+    const posts: BlogPost[] = (data ?? [])
+      .filter((item) => item.status === "published")
+      .map((item) => ({
+        id: item.id,
+        slug: item.slug,
+        title: item.title,
+        subtitle: item.subtitle ?? undefined,
+        date: item.date,
+        author: item.author,
+        body: item.body,
+        featuredImage: item.featuredImage ?? undefined,
+        status: "published" as const,
+      }))
     return posts.sort((a, b) => b.date.localeCompare(a.date))
   } catch {
     return []

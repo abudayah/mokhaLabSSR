@@ -177,9 +177,15 @@ function EditQrLinkModal({ link, onDismiss }: { link: QrLink; onDismiss: () => v
 export default function QrLinkDetailPage({ id }: { id: string }) {
   const { getLinkById, fetchMetricSummaries } = useQrLinkStore()
   const link = getLinkById(id)
-  const { setContentType } = useAppLayout()
+  const { setContentType, setDynamicLabel } = useAppLayout()
 
   useEffect(() => { setContentType("default") }, [setContentType])
+
+  // Set breadcrumb leaf to the link's label (or code as fallback), clear on unmount
+  useEffect(() => {
+    if (link) setDynamicLabel(link.label ?? link.code)
+    return () => setDynamicLabel(undefined)
+  }, [link, setDynamicLabel])
 
   const [summaries, setSummaries] = useState<ClickMetricSummary[]>([])
   const [metricsLoading, setMetricsLoading] = useState(true)

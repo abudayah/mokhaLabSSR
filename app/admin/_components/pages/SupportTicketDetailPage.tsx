@@ -299,12 +299,18 @@ function AssignModal({ ticket, onDismiss }: { ticket: SupportTicket; onDismiss: 
 export default function SupportTicketDetailPage({ id }: { id: string }) {
   const { getTicketById, updateTicketStatus, saveInternalNotes } = useSupportTicketStore()
   const { addNotification } = useNotifications()
-  const { setContentType } = useAppLayout()
+  const { setContentType, setDynamicLabel } = useAppLayout()
   const router = useRouter()
 
   useEffect(() => { setContentType("default") }, [setContentType])
 
   const ticket = getTicketById(id)
+
+  // Set breadcrumb leaf to the ticket ID, clear on unmount
+  useEffect(() => {
+    if (ticket) setDynamicLabel(ticket.ticketId)
+    return () => setDynamicLabel(undefined)
+  }, [ticket, setDynamicLabel])
 
   const [replyModalOpen, setReplyModalOpen] = useState(false)
   const [callModalOpen, setCallModalOpen] = useState(false)

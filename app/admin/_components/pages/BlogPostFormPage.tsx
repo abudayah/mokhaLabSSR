@@ -13,6 +13,7 @@ import Button from "@cloudscape-design/components/button"
 import SpaceBetween from "@cloudscape-design/components/space-between"
 import Alert from "@cloudscape-design/components/alert"
 import Container from "@cloudscape-design/components/container"
+import Toggle from "@cloudscape-design/components/toggle"
 import { blogPostSchema } from "@/app/admin/_components/schemas/blogPostSchema"
 import type { BlogPostFormData } from "@/app/admin/_components/schemas/blogPostSchema"
 import { useBlogPostStore } from "@/app/admin/_components/context/useBlogPostStore"
@@ -46,12 +47,18 @@ export default function BlogPostFormPage({ postId }: BlogPostFormPageProps) {
 
   const { getPostById, createPost, updatePost } = useBlogPostStore()
   const { addNotification } = useNotifications()
-  const { setContentType } = useAppLayout()
+  const { setContentType, setDynamicLabel } = useAppLayout()
   const router = useRouter()
 
   useEffect(() => { setContentType("form") }, [setContentType])
 
   const existingPost = isEditMode && postId ? getPostById(postId) : undefined
+
+  // Set breadcrumb leaf to the post title in edit mode, clear on unmount
+  useEffect(() => {
+    if (isEditMode && existingPost) setDynamicLabel(existingPost.title)
+    return () => setDynamicLabel(undefined)
+  }, [isEditMode, existingPost, setDynamicLabel])
 
   const {
     control,
@@ -70,6 +77,7 @@ export default function BlogPostFormPage({ postId }: BlogPostFormPageProps) {
             body: existingPost.body,
             featuredImage: existingPost.featuredImage ?? "",
             date: existingPost.date,
+            status: existingPost.status ?? "draft",
           }
         : {
             title: "",
@@ -77,6 +85,8 @@ export default function BlogPostFormPage({ postId }: BlogPostFormPageProps) {
             author: "mokhaLab",
             body: "",
             featuredImage: "",
+            date: new Date().toISOString().split("T")[0],
+            status: "draft",
           },
   })
 
@@ -198,17 +208,40 @@ export default function BlogPostFormPage({ postId }: BlogPostFormPageProps) {
                 />
               </FormField>
 
-              {/* Publish Date — edit mode only */}
-              {isEditMode && (
-                <FormField label="Publish date" errorText={get(errors, "date.message")}>
-                  <CDatePicker
-                    control={control}
-                    name="date"
-                    placeholder="YYYY-MM-DD"
-                    format="iso"
-                  />
-                </FormField>
-              )}
+              {/* Status */}
+              <FormField
+                label="Status"
+                description="Draft posts are only visible in the admin. Published posts appear on the public blog."
+              >
+                <Controller
+                  name="status"
+                  control={control}
+                  render={({ field }) => (
+                    <Toggle
+                      checked={field.value === "published"}
+                      onChange={({ detail }) =>
+                        field.onChange(detail.checked ? "published" : "draft")
+                      }
+                    >
+                      {field.value === "published" ? "Published" : "Draft"}
+                    </Toggle>
+                  )}
+                />
+              </FormField>
+
+              {/* Published At */}
+              <FormField
+                label="Published At"
+                description="The date shown on the public post. Updated automatically when you first publish."
+                errorText={get(errors, "date.message")}
+              >
+                <CDatePicker
+                  control={control}
+                  name="date"
+                  placeholder="YYYY-MM-DD"
+                  format="iso"
+                />
+              </FormField>
             </SpaceBetween>
           </Container>
         </Form>

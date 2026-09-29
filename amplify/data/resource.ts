@@ -57,6 +57,8 @@ const schema = a.schema({
       author: a.string().required(),
       body: a.string().required(),
       featuredImage: a.string(),
+      /** "draft" | "published" — defaults to "draft" on create */
+      status: a.string().default("draft"),
     })
     .authorization((allow) => [
       // Authenticated users (admin) can do everything

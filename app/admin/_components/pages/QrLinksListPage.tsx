@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { useForm, get } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -11,6 +11,7 @@ import Table, { TableProps } from "@cloudscape-design/components/table"
 import Box from "@cloudscape-design/components/box"
 import Button from "@cloudscape-design/components/button"
 import ButtonDropdown from "@cloudscape-design/components/button-dropdown"
+import CollectionPreferences, { CollectionPreferencesProps } from "@cloudscape-design/components/collection-preferences"
 import CopyToClipboard from "@cloudscape-design/components/copy-to-clipboard"
 import Header from "@cloudscape-design/components/header"
 import SpaceBetween from "@cloudscape-design/components/space-between"
@@ -22,28 +23,29 @@ import { useNotifications } from "@/app/admin/_components/context/NotificationCo
 import { generateQrSvg, downloadQrSvg } from "@/app/admin/_components/utils/qrCodeUtils"
 import { qrLinkSchema } from "@/app/admin/_components/schemas/qrLinkSchema"
 import type { QrLinkFormData } from "@/app/admin/_components/schemas/qrLinkSchema"
+import { useTablePreferences } from "@/app/admin/_components/hooks/useTablePreferences"
 import type { QrLink } from "@/lib/qr-links"
 
 const BASE_URL = "https://mokhalab.com"
-const COL_WIDTHS_KEY = "qr-links-table-col-widths"
 
-// ─── Column width persistence ─────────────────────────────────────────────────
+// ─── Column definitions ───────────────────────────────────────────────────────
 
-function loadColWidths(): Record<string, number> {
-  try {
-    const raw = localStorage.getItem(COL_WIDTHS_KEY)
-    return raw ? JSON.parse(raw) : {}
-  } catch {
-    return {}
-  }
-}
+const ALL_COLUMN_IDS = ["label", "shortLink", "destinationUrl", "clickCount", "lastClickedAt", "actions"]
 
-function saveColWidths(widths: Record<string, number>) {
-  try {
-    localStorage.setItem(COL_WIDTHS_KEY, JSON.stringify(widths))
-  } catch {
-    // ignore storage errors
-  }
+const COLUMN_DISPLAY: CollectionPreferencesProps.VisibleContentOption[] = [
+  { id: "label", label: "Label", editable: false },
+  { id: "shortLink", label: "Short Link" },
+  { id: "destinationUrl", label: "Destination URL" },
+  { id: "clickCount", label: "Clicks" },
+  { id: "lastClickedAt", label: "Last Clicked" },
+  { id: "actions", label: "Actions", editable: false },
+]
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function formatLastClicked(value?: string): string {
+  if (!value) return "Never"
+  return new Date(value).toLocaleString()
 }
 
 // ─── Create Modal ─────────────────────────────────────────────────────────────
@@ -276,11 +278,6 @@ function DeleteQrLinkModal({ link, onDismiss }: DeleteQrLinkModalProps) {
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
-function formatLastClicked(value?: string): string {
-  if (!value) return "Never"
-  return new Date(value).toLocaleString()
-}
-
 export default function QrLinksListPage() {
   const { links, loading } = useQrLinkStore()
   const { setContentType } = useAppLayout()
@@ -288,19 +285,37 @@ export default function QrLinksListPage() {
 
   useEffect(() => { setContentType("table") }, [setContentType])
 
-  const [sortingColumn, setSortingColumn] = useState<TableProps.SortingColumn<QrLink>>({ sortingField: "createdAt" })
-  const [sortingDescending, setSortingDescending] = useState(true)
-  const [columnWidths, setColumnWidths] = useState<Record<string, number>>({})
   const [createModalVisible, setCreateModalVisible] = useState(false)
   const [editTarget, setEditTarget] = useState<QrLink | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<QrLink | null>(null)
 
-  // Load column widths from localStorage on mount
-  useEffect(() => {
-    setColumnWidths(loadColWidths())
-  }, [])
+  const {
+    sortingColumn,
+    sortingDescending,
+    onSortingChange,
+    columnWidths,
+    onColumnWidthsChange,
+    visibleColumnIds,
+    setVisibleColumnIds,
+  } = useTablePreferences<QrLink>({
+    storageKey: "qr-links",
+    defaultSortingField: "createdAt",
+    defaultSortingDescending: true,
+    allColumnIds: ALL_COLUMN_IDS,
+  })
 
-  const columnDefinitions: TableProps.ColumnDefinition<QrLink>[] = [
+  // Client-side sort (store data is unsorted)
+  const sorted = useMemo(() => {
+    const field = (sortingColumn.sortingField ?? "createdAt") as keyof QrLink
+    return [...links].sort((a, b) => {
+      const valA = String(a[field] ?? "")
+      const valB = String(b[field] ?? "")
+      const cmp = valA.localeCompare(valB)
+      return sortingDescending ? -cmp : cmp
+    })
+  }, [links, sortingColumn, sortingDescending])
+
+  const allColumnDefinitions: TableProps.ColumnDefinition<QrLink>[] = [
     {
       id: "label",
       header: "Label",
@@ -389,6 +404,10 @@ export default function QrLinksListPage() {
     },
   ]
 
+  const columnDefinitions = allColumnDefinitions.filter((col) =>
+    visibleColumnIds.includes(col.id!)
+  )
+
   return (
     <>
       <Table
@@ -397,31 +416,39 @@ export default function QrLinksListPage() {
         loading={loading}
         loadingText="Loading QR links…"
         columnDefinitions={columnDefinitions}
-        items={links}
+        items={sorted}
         resizableColumns
-        onColumnWidthsChange={({ detail }) => {
-          const newWidths: Record<string, number> = {}
-          detail.widths.forEach((w, i) => {
-            const id = columnDefinitions[i]?.id
-            if (id) newWidths[id] = w
-          })
-          setColumnWidths(newWidths)
-          saveColWidths(newWidths)
-        }}
+        onColumnWidthsChange={({ detail }) =>
+          onColumnWidthsChange(detail, columnDefinitions.map((c) => c.id!))
+        }
         sortingColumn={sortingColumn}
         sortingDescending={sortingDescending}
-        onSortingChange={({ detail }) => {
-          setSortingColumn(detail.sortingColumn)
-          setSortingDescending(detail.isDescending ?? false)
-        }}
+        onSortingChange={({ detail }) => onSortingChange(detail)}
+        preferences={
+          <CollectionPreferences
+            title="Table preferences"
+            confirmLabel="Confirm"
+            cancelLabel="Cancel"
+            onConfirm={({ detail }) => {
+              if (detail.visibleContent) setVisibleColumnIds([...detail.visibleContent])
+            }}
+            visibleContentPreference={{
+              title: "Visible columns",
+              options: [{ label: "Columns", options: COLUMN_DISPLAY }],
+            }}
+            preferences={{ visibleContent: visibleColumnIds }}
+          />
+        }
         header={
           <Header
             variant="awsui-h1-sticky"
             counter={`(${links.length})`}
             actions={
-              <Button variant="primary" onClick={() => setCreateModalVisible(true)}>
-                Create QR Link
-              </Button>
+              <SpaceBetween direction="horizontal" size="xs">
+                <Button variant="primary" onClick={() => setCreateModalVisible(true)}>
+                  Create QR Link
+                </Button>
+              </SpaceBetween>
             }
           >
             QR Links

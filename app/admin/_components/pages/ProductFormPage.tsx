@@ -82,9 +82,12 @@ export default function ProductFormPage({ productId }: ProductFormPageProps) {
   const { loading, getProductById, getProductBySlug, createProduct, updateProduct } =
     useProductStore()
   const { addNotification } = useNotifications()
-  const { setContentType } = useAppLayout()
+  const { setContentType, setDynamicLabel } = useAppLayout()
 
   useEffect(() => { setContentType("form") }, [setContentType])
+
+  // Clear breadcrumb dynamic label on unmount
+  useEffect(() => () => setDynamicLabel(undefined), [setDynamicLabel])
 
   const slugManuallyEdited = useRef<boolean>(false)
   const hasReset = useRef<boolean>(false)
@@ -153,9 +156,10 @@ export default function ProductFormPage({ productId }: ProductFormPageProps) {
     const product = getProductById(productId!)
     if (!product) return
     reset(toFormData(product))
+    setDynamicLabel(product.name)
     slugManuallyEdited.current = true // don't overwrite slug from name in edit mode
     hasReset.current = true
-  }, [isEditMode, loading, productId, getProductById, reset])
+  }, [isEditMode, loading, productId, getProductById, reset, setDynamicLabel])
 
   // ---------------------------------------------------------------------------
   // Slug auto-generation on Name blur

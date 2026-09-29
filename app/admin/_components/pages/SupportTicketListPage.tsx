@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import Table, { TableProps } from "@cloudscape-design/components/table"
 import Box from "@cloudscape-design/components/box"
 import Button from "@cloudscape-design/components/button"
+import CollectionPreferences, { CollectionPreferencesProps } from "@cloudscape-design/components/collection-preferences"
 import Header from "@cloudscape-design/components/header"
 import TextFilter from "@cloudscape-design/components/text-filter"
 import Select from "@cloudscape-design/components/select"
@@ -12,6 +13,7 @@ import SpaceBetween from "@cloudscape-design/components/space-between"
 import StatusIndicator from "@cloudscape-design/components/status-indicator"
 import Badge from "@cloudscape-design/components/badge"
 import { useSupportTicketStore } from "@/app/admin/_components/context/useSupportTicketStore"
+import { useTablePreferences } from "@/app/admin/_components/hooks/useTablePreferences"
 import type { SupportTicket } from "@/lib/support-tickets"
 import { useAppLayout } from "@/app/admin/_components/context/AppLayoutContext"
 
@@ -82,6 +84,25 @@ const COUNTRY_OPTIONS = [
   { value: "Canada", label: "Canada" },
 ]
 
+// ─── Column config ────────────────────────────────────────────────────────────
+
+const ALL_COLUMN_IDS = [
+  "ticketId", "customerName", "caseType", "productName",
+  "country", "status", "submissionTimestamp", "assignedAgent", "sla",
+]
+
+const COLUMN_DISPLAY: CollectionPreferencesProps.VisibleContentOption[] = [
+  { id: "ticketId", label: "Ticket ID", editable: false },
+  { id: "customerName", label: "Name" },
+  { id: "caseType", label: "Case Type" },
+  { id: "productName", label: "Product" },
+  { id: "country", label: "Country" },
+  { id: "status", label: "Status" },
+  { id: "submissionTimestamp", label: "Submitted At" },
+  { id: "assignedAgent", label: "Assigned To" },
+  { id: "sla", label: "SLA" },
+]
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function SupportTicketListPage() {
@@ -95,10 +116,21 @@ export default function SupportTicketListPage() {
   const [statusFilter, setStatusFilter] = useState("all")
   const [caseTypeFilter, setCaseTypeFilter] = useState("all")
   const [countryFilter, setCountryFilter] = useState("all")
-  const [sortingColumn, setSortingColumn] = useState<TableProps.SortingColumn<SupportTicket>>({
-    sortingField: "submissionTimestamp",
+
+  const {
+    sortingColumn,
+    sortingDescending,
+    onSortingChange,
+    columnWidths,
+    onColumnWidthsChange,
+    visibleColumnIds,
+    setVisibleColumnIds,
+  } = useTablePreferences<SupportTicket>({
+    storageKey: "support-tickets",
+    defaultSortingField: "submissionTimestamp",
+    defaultSortingDescending: true,
+    allColumnIds: ALL_COLUMN_IDS,
   })
-  const [sortingDescending, setSortingDescending] = useState(true)
 
   const filtered = useMemo(() => {
     const lower = filterText.toLowerCase()
@@ -128,7 +160,7 @@ export default function SupportTicketListPage() {
     })
   }, [filtered, sortingColumn, sortingDescending])
 
-  const columnDefinitions: TableProps.ColumnDefinition<SupportTicket>[] = [
+  const allColumnDefinitions: TableProps.ColumnDefinition<SupportTicket>[] = [
     {
       id: "ticketId",
       header: "Ticket ID",
@@ -142,6 +174,7 @@ export default function SupportTicketListPage() {
       ),
       sortingField: "ticketId",
       isRowHeader: true,
+      width: columnWidths["ticketId"],
       minWidth: 120,
     },
     {
@@ -149,6 +182,7 @@ export default function SupportTicketListPage() {
       header: "Name",
       cell: (item) => item.customerName,
       sortingField: "customerName",
+      width: columnWidths["customerName"],
       minWidth: 140,
     },
     {
@@ -158,6 +192,7 @@ export default function SupportTicketListPage() {
         <Badge color={CASE_TYPE_COLOR[item.caseType]}>{item.caseType}</Badge>
       ),
       sortingField: "caseType",
+      width: columnWidths["caseType"],
       minWidth: 100,
     },
     {
@@ -178,6 +213,7 @@ export default function SupportTicketListPage() {
           {item.productName}
         </span>
       ),
+      width: columnWidths["productName"],
       minWidth: 140,
     },
     {
@@ -185,6 +221,7 @@ export default function SupportTicketListPage() {
       header: "Country",
       cell: (item) => item.country,
       sortingField: "country",
+      width: columnWidths["country"],
       minWidth: 90,
     },
     {
@@ -196,6 +233,7 @@ export default function SupportTicketListPage() {
         </StatusIndicator>
       ),
       sortingField: "status",
+      width: columnWidths["status"],
       minWidth: 120,
     },
     {
@@ -203,6 +241,7 @@ export default function SupportTicketListPage() {
       header: "Submitted At",
       cell: (item) => formatSubmittedAt(item.submissionTimestamp),
       sortingField: "submissionTimestamp",
+      width: columnWidths["submissionTimestamp"],
       minWidth: 160,
     },
     {
@@ -210,6 +249,7 @@ export default function SupportTicketListPage() {
       header: "Assigned To",
       cell: (item) => item.assignedAgent ?? <span style={{ color: "#aab7b8" }}>Unassigned</span>,
       sortingField: "assignedAgent",
+      width: columnWidths["assignedAgent"],
       minWidth: 120,
     },
     {
@@ -223,9 +263,14 @@ export default function SupportTicketListPage() {
         ) : (
           <StatusIndicator type="pending">On time</StatusIndicator>
         ),
+      width: columnWidths["sla"],
       minWidth: 100,
     },
   ]
+
+  const columnDefinitions = allColumnDefinitions.filter((col) =>
+    visibleColumnIds.includes(col.id!)
+  )
 
   const overdueCount = tickets.filter(isSlaBreached).length
 
@@ -237,12 +282,13 @@ export default function SupportTicketListPage() {
       loadingText="Loading support tickets…"
       columnDefinitions={columnDefinitions}
       items={sorted}
+      resizableColumns
+      onColumnWidthsChange={({ detail }) =>
+        onColumnWidthsChange(detail, columnDefinitions.map((c) => c.id!))
+      }
       sortingColumn={sortingColumn}
       sortingDescending={sortingDescending}
-      onSortingChange={({ detail }) => {
-        setSortingColumn(detail.sortingColumn)
-        setSortingDescending(detail.isDescending ?? false)
-      }}
+      onSortingChange={({ detail }) => onSortingChange(detail)}
       filter={
         <SpaceBetween direction="horizontal" size="xs">
           <TextFilter
@@ -270,6 +316,21 @@ export default function SupportTicketListPage() {
             ariaLabel="Filter by country"
           />
         </SpaceBetween>
+      }
+      preferences={
+        <CollectionPreferences
+          title="Table preferences"
+          confirmLabel="Confirm"
+          cancelLabel="Cancel"
+          onConfirm={({ detail }) => {
+            if (detail.visibleContent) setVisibleColumnIds([...detail.visibleContent])
+          }}
+          visibleContentPreference={{
+            title: "Visible columns",
+            options: [{ label: "Columns", options: COLUMN_DISPLAY }],
+          }}
+          preferences={{ visibleContent: visibleColumnIds }}
+        />
       }
       header={
         <Header

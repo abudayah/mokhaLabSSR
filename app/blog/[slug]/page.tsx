@@ -24,16 +24,19 @@ async function getAllPosts(): Promise<BlogPost[]> {
   try {
     const client = generateClient<Schema>()
     const { data } = await client.models.BlogPost.list()
-    return (data ?? []).map((item) => ({
-      id: item.id,
-      slug: item.slug,
-      title: item.title,
-      subtitle: item.subtitle ?? undefined,
-      date: item.date,
-      author: item.author,
-      body: item.body,
-      featuredImage: item.featuredImage ?? undefined,
-    }))
+    return (data ?? [])
+      .filter((item) => item.status === "published")
+      .map((item) => ({
+        id: item.id,
+        slug: item.slug,
+        title: item.title,
+        subtitle: item.subtitle ?? undefined,
+        date: item.date,
+        author: item.author,
+        body: item.body,
+        featuredImage: item.featuredImage ?? undefined,
+        status: "published" as const,
+      }))
   } catch {
     return []
   }

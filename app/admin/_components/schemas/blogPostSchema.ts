@@ -11,6 +11,7 @@ export const blogPostSchema = z.object({
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be in YYYY-MM-DD format")
     .optional(),
+  status: z.enum(["draft", "published"]),
 })
 
 export type BlogPostFormData = z.infer<typeof blogPostSchema>

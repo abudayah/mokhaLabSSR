@@ -40,6 +40,7 @@ function toPost(item: Schema["BlogPost"]["type"]): BlogPost {
     author: item.author,
     body: item.body,
     featuredImage: item.featuredImage ?? undefined,
+    status: (item.status === "published" ? "published" : "draft"),
   }
 }
 
@@ -91,12 +92,15 @@ export function BlogPostStoreProvider({ children }: { children: ReactNode }) {
   }
 
   async function createPost(data: BlogPostFormData): Promise<BlogPost> {
-    const date = new Date().toISOString().split("T")[0]
+    // Use the provided date, or today as fallback
+    const today = new Date().toISOString().split("T")[0]
+    const date = data.date ?? today
     const slug = uniqueSlug(data.title, posts)
     const { data: created, errors } = await client.models.BlogPost.create({
       ...data,
       slug,
       date,
+      status: data.status ?? "draft",
     })
     if (errors?.length || !created) throw new Error(errors?.[0]?.message ?? "Create failed")
     const post = toPost(created)
@@ -110,12 +114,18 @@ export function BlogPostStoreProvider({ children }: { children: ReactNode }) {
       existing && generateSlug(data.title) === generateSlug(existing.title)
         ? existing.slug
         : uniqueSlug(data.title, posts, id)
-    const date = data.date ?? existing?.date
+
+    // Auto-stamp today when publishing for the first time (no existing date)
+    const today = new Date().toISOString().split("T")[0]
+    const isFirstPublish = data.status === "published" && !existing?.date && !data.date
+    const date = data.date ?? (isFirstPublish ? today : existing?.date)
+
     const { data: updated, errors } = await client.models.BlogPost.update({
       id,
       ...data,
       slug,
       date,
+      status: data.status ?? existing?.status ?? "draft",
     })
     if (errors?.length || !updated) throw new Error(errors?.[0]?.message ?? "Update failed")
     const post = toPost(updated)
