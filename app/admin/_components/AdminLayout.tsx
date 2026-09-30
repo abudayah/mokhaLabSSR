@@ -41,11 +41,11 @@ function buildBreadcrumbs(pathname: string, dynamicLabel: string | undefined): B
   if (pathname.match(/^\/admin\/products\/([^/]+)\/edit$/)) {
     return [home, { text: "Products", href: "/admin/products" }, { text: dynamicLabel ?? "Edit product", href: pathname }]
   }
-  if (pathname === "/admin/qr-links") {
-    return [home, { text: "QR Links", href: "/admin/qr-links" }]
+  if (pathname === "/admin/short-links") {
+    return [home, { text: "Short Links", href: "/admin/short-links" }]
   }
-  if (pathname.match(/^\/admin\/qr-links\/([^/]+)$/)) {
-    return [home, { text: "QR Links", href: "/admin/qr-links" }, { text: dynamicLabel ?? "Link detail", href: pathname }]
+  if (pathname.match(/^\/admin\/short-links\/([^/]+)$/)) {
+    return [home, { text: "Short Links", href: "/admin/short-links" }, { text: dynamicLabel ?? "Link detail", href: pathname }]
   }
   if (pathname === "/admin/support") {
     return [home, { text: "Support", href: "/admin/support" }]
@@ -60,7 +60,7 @@ function buildBreadcrumbs(pathname: string, dynamicLabel: string | undefined): B
 
 function getActiveHref(path: string): string {
   if (path.startsWith("/admin/blog")) return "/admin/blog"
-  if (path.startsWith("/admin/qr-links")) return "/admin/qr-links"
+  if (path.startsWith("/admin/short-links")) return "/admin/short-links"
   if (path.startsWith("/admin/support")) return "/admin/support"
   if (path.startsWith("/admin/products")) return "/admin/products"
   if (path === "/admin" || path === "/admin/") return "/admin"
@@ -141,7 +141,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 type: "section-group",
                 title: "Tools",
                 items: [
-                  { type: "link", text: "QR Links", href: "/admin/qr-links" },
+                  { type: "link", text: "Short Links", href: "/admin/short-links" },
                   { type: "link", text: "Support", href: "/admin/support" },
                 ],
               },

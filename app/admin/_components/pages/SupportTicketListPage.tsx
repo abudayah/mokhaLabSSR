@@ -92,8 +92,8 @@ const ALL_COLUMN_IDS = [
   "country", "status", "submissionTimestamp", "assignedAgent", "sla", "actions",
 ]
 
-const COLUMN_DISPLAY: CollectionPreferencesProps.VisibleContentOption[] = [
-  { id: "ticketId", label: "Ticket ID", editable: false },
+const CONTENT_DISPLAY_OPTIONS: CollectionPreferencesProps.ContentDisplayOption[] = [
+  { id: "ticketId", label: "Ticket ID", alwaysVisible: true },
   { id: "customerName", label: "Name" },
   { id: "caseType", label: "Case Type" },
   { id: "productName", label: "Product" },
@@ -102,7 +102,7 @@ const COLUMN_DISPLAY: CollectionPreferencesProps.VisibleContentOption[] = [
   { id: "submissionTimestamp", label: "Submitted At" },
   { id: "assignedAgent", label: "Assigned To" },
   { id: "sla", label: "SLA" },
-  { id: "actions", label: "Actions", editable: false },
+  { id: "actions", label: "Actions", alwaysVisible: true },
 ]
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -125,8 +125,12 @@ export default function SupportTicketListPage() {
     onSortingChange,
     columnWidths,
     onColumnWidthsChange,
-    visibleColumnIds,
-    setVisibleColumnIds,
+    contentDisplay,
+    wrapLines,
+    stripedRows,
+    contentDensity,
+    stickyLastColumns,
+    onPreferencesConfirm,
   } = useTablePreferences<SupportTicket>({
     storageKey: "support-tickets",
     defaultSortingField: "submissionTimestamp",
@@ -291,7 +295,7 @@ export default function SupportTicketListPage() {
   ]
 
   const columnDefinitions = allColumnDefinitions.filter((col) =>
-    visibleColumnIds.includes(col.id!)
+    contentDisplay.find((c) => c.id === col.id)?.visible ?? true
   )
 
   const overdueCount = tickets.filter(isSlaBreached).length
@@ -303,8 +307,13 @@ export default function SupportTicketListPage() {
       loading={loading}
       loadingText="Loading support tickets…"
       columnDefinitions={columnDefinitions}
+      columnDisplay={contentDisplay}
       items={sorted}
       resizableColumns
+      wrapLines={wrapLines}
+      stripedRows={stripedRows}
+      contentDensity={contentDensity}
+      stickyColumns={{ last: stickyLastColumns }}
       onColumnWidthsChange={({ detail }) =>
         onColumnWidthsChange(detail, columnDefinitions.map((c) => c.id!))
       }
@@ -344,14 +353,31 @@ export default function SupportTicketListPage() {
           title="Table preferences"
           confirmLabel="Confirm"
           cancelLabel="Cancel"
-          onConfirm={({ detail }) => {
-            if (detail.visibleContent) setVisibleColumnIds([...detail.visibleContent])
+          onConfirm={({ detail }) => onPreferencesConfirm(detail)}
+          contentDisplayPreference={{
+            title: "Column order and visibility",
+            options: CONTENT_DISPLAY_OPTIONS,
           }}
-          visibleContentPreference={{
-            title: "Visible columns",
-            options: [{ label: "Columns", options: COLUMN_DISPLAY }],
+          wrapLinesPreference={{ label: "Wrap lines", description: "Enable to wrap long text" }}
+          stripedRowsPreference={{ label: "Striped rows", description: "Alternate row background colors" }}
+          contentDensityPreference={{ label: "Compact mode", description: "Reduce vertical padding in rows" }}
+          stickyColumnsPreference={{
+            lastColumns: {
+              title: "Stick last column",
+              description: "Keep the last column visible while scrolling horizontally",
+              options: [
+                { label: "None", value: 0 },
+                { label: "Last column", value: 1 },
+              ],
+            },
           }}
-          preferences={{ visibleContent: visibleColumnIds }}
+          preferences={{
+            contentDisplay,
+            wrapLines,
+            stripedRows,
+            contentDensity,
+            stickyColumns: { last: stickyLastColumns },
+          }}
         />
       }
       header={

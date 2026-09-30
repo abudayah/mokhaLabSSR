@@ -82,7 +82,7 @@ const schema = a.schema({
 
   ClickEvent: a
     .model({
-      qrLinkId: a.string().required(),
+      shortLinkId: a.string().required(),
       clickedAt: a.string().required(),
       userAgent: a.string(),
       ip: a.string(),
@@ -102,7 +102,7 @@ const schema = a.schema({
    */
   ClickMetricSummary: a
     .model({
-      qrLinkId: a.string().required(),
+      shortLinkId: a.string().required(),
       dateKey: a.string().required(),        // "2026-08-16"
       // Volume
       totalClicks: a.integer().required(),
@@ -128,7 +128,7 @@ const schema = a.schema({
       seenIps: a.string(),
     })
     .secondaryIndexes((index) => [
-      index("qrLinkId"),
+      index("shortLinkId"),
       index("dateKey"),
     ])
     .authorization((allow) => [

@@ -21,10 +21,10 @@ import FormField from "@cloudscape-design/components/form-field"
 import { useQrLinkStore } from "@/app/admin/_components/context/useQrLinkStore"
 import { useNotifications } from "@/app/admin/_components/context/NotificationContext"
 import { generateQrSvg, downloadQrSvg } from "@/app/admin/_components/utils/qrCodeUtils"
-import { qrLinkSchema } from "@/app/admin/_components/schemas/qrLinkSchema"
-import type { QrLinkFormData } from "@/app/admin/_components/schemas/qrLinkSchema"
+import { shortLinkSchema } from "@/app/admin/_components/schemas/shortLinkSchema"
+import type { QrLinkFormData } from "@/app/admin/_components/schemas/shortLinkSchema"
 import { useTablePreferences } from "@/app/admin/_components/hooks/useTablePreferences"
-import type { QrLink } from "@/lib/qr-links"
+import type { QrLink } from "@/lib/short-links"
 
 const BASE_URL = "https://mokhalab.com"
 
@@ -32,13 +32,13 @@ const BASE_URL = "https://mokhalab.com"
 
 const ALL_COLUMN_IDS = ["label", "shortLink", "destinationUrl", "clickCount", "lastClickedAt", "actions"]
 
-const COLUMN_DISPLAY: CollectionPreferencesProps.VisibleContentOption[] = [
-  { id: "label", label: "Label", editable: false },
+const CONTENT_DISPLAY_OPTIONS: CollectionPreferencesProps.ContentDisplayOption[] = [
+  { id: "label", label: "Label", alwaysVisible: true },
   { id: "shortLink", label: "Short Link" },
   { id: "destinationUrl", label: "Destination URL" },
   { id: "clickCount", label: "Clicks" },
   { id: "lastClickedAt", label: "Last Clicked" },
-  { id: "actions", label: "Actions", editable: false },
+  { id: "actions", label: "Actions", alwaysVisible: true },
 ]
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -68,7 +68,7 @@ function CreateQrLinkModal({ visible, onDismiss }: CreateQrLinkModalProps) {
     getValues,
     formState: { errors, isSubmitting },
   } = useForm<QrLinkFormData>({
-    resolver: zodResolver(qrLinkSchema),
+    resolver: zodResolver(shortLinkSchema),
     mode: "onBlur",
     reValidateMode: "onChange",
     defaultValues: { destinationUrl: "", label: "", customCode: "" },
@@ -124,14 +124,14 @@ function CreateQrLinkModal({ visible, onDismiss }: CreateQrLinkModalProps) {
         <Box float="right">
           <SpaceBetween direction="horizontal" size="xs">
             <Button variant="link" formAction="none" onClick={handleDismiss}>Cancel</Button>
-            <Button variant="primary" formAction="submit" form="create-qr-link-form" loading={isSubmitting}>
+            <Button variant="primary" formAction="submit" form="create-short-link-form" loading={isSubmitting}>
               Create
             </Button>
           </SpaceBetween>
         </Box>
       }
     >
-      <form id="create-qr-link-form" onSubmit={handleSubmit(onSubmit)} noValidate>
+      <form id="create-short-link-form" onSubmit={handleSubmit(onSubmit)} noValidate>
         <Form>
           <SpaceBetween size="l">
             <FormField label="Destination URL" errorText={get(errors, "destinationUrl.message")}>
@@ -206,12 +206,12 @@ function EditQrLinkModal({ link, onDismiss }: EditQrLinkModalProps) {
         <Box float="right">
           <SpaceBetween direction="horizontal" size="xs">
             <Button variant="link" formAction="none" onClick={onDismiss}>Cancel</Button>
-            <Button variant="primary" formAction="submit" form="edit-qr-link-form" loading={isSubmitting}>Save</Button>
+            <Button variant="primary" formAction="submit" form="edit-short-link-form" loading={isSubmitting}>Save</Button>
           </SpaceBetween>
         </Box>
       }
     >
-      <form id="edit-qr-link-form" onSubmit={handleSubmit(onSubmit)} noValidate>
+      <form id="edit-short-link-form" onSubmit={handleSubmit(onSubmit)} noValidate>
         <Form>
           <SpaceBetween size="l">
             <FormField label="Destination URL" errorText={get(errors, "destinationUrl.message")}>
@@ -278,7 +278,7 @@ function DeleteQrLinkModal({ link, onDismiss }: DeleteQrLinkModalProps) {
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
-export default function QrLinksListPage() {
+export default function ShortLinksListPage() {
   const { links, loading } = useQrLinkStore()
   const { setContentType } = useAppLayout()
   const router = useRouter()
@@ -295,10 +295,14 @@ export default function QrLinksListPage() {
     onSortingChange,
     columnWidths,
     onColumnWidthsChange,
-    visibleColumnIds,
-    setVisibleColumnIds,
+    contentDisplay,
+    wrapLines,
+    stripedRows,
+    contentDensity,
+    stickyLastColumns,
+    onPreferencesConfirm,
   } = useTablePreferences<QrLink>({
-    storageKey: "qr-links",
+    storageKey: "short-links",
     defaultSortingField: "createdAt",
     defaultSortingDescending: true,
     allColumnIds: ALL_COLUMN_IDS,
@@ -320,7 +324,7 @@ export default function QrLinksListPage() {
       id: "label",
       header: "Label",
       cell: (item) => (
-        <Button variant="inline-link" onClick={() => router.push(`/admin/qr-links/${item.id}`)}>
+        <Button variant="inline-link" onClick={() => router.push(`/admin/short-links/${item.id}`)}>
           {item.label ?? item.code}
         </Button>
       ),
@@ -390,7 +394,7 @@ export default function QrLinksListPage() {
           ]}
           onItemClick={async ({ detail }) => {
             if (detail.id === "view") {
-              router.push(`/admin/qr-links/${item.id}`)
+              router.push(`/admin/short-links/${item.id}`)
             } else if (detail.id === "shortlink") {
               window.open(`${BASE_URL}/go/${item.code}`, "_blank")
             } else if (detail.id === "edit") {
@@ -410,7 +414,7 @@ export default function QrLinksListPage() {
   ]
 
   const columnDefinitions = allColumnDefinitions.filter((col) =>
-    visibleColumnIds.includes(col.id!)
+    contentDisplay.find((c) => c.id === col.id)?.visible ?? true
   )
 
   return (
@@ -421,8 +425,13 @@ export default function QrLinksListPage() {
         loading={loading}
         loadingText="Loading QR links…"
         columnDefinitions={columnDefinitions}
+        columnDisplay={contentDisplay}
         items={sorted}
         resizableColumns
+        wrapLines={wrapLines}
+        stripedRows={stripedRows}
+        contentDensity={contentDensity}
+        stickyColumns={{ last: stickyLastColumns }}
         onColumnWidthsChange={({ detail }) =>
           onColumnWidthsChange(detail, columnDefinitions.map((c) => c.id!))
         }
@@ -434,14 +443,31 @@ export default function QrLinksListPage() {
             title="Table preferences"
             confirmLabel="Confirm"
             cancelLabel="Cancel"
-            onConfirm={({ detail }) => {
-              if (detail.visibleContent) setVisibleColumnIds([...detail.visibleContent])
+            onConfirm={({ detail }) => onPreferencesConfirm(detail)}
+            contentDisplayPreference={{
+              title: "Column order and visibility",
+              options: CONTENT_DISPLAY_OPTIONS,
             }}
-            visibleContentPreference={{
-              title: "Visible columns",
-              options: [{ label: "Columns", options: COLUMN_DISPLAY }],
+            wrapLinesPreference={{ label: "Wrap lines", description: "Enable to wrap long text" }}
+            stripedRowsPreference={{ label: "Striped rows", description: "Alternate row background colors" }}
+            contentDensityPreference={{ label: "Compact mode", description: "Reduce vertical padding in rows" }}
+            stickyColumnsPreference={{
+              lastColumns: {
+                title: "Stick last column",
+                description: "Keep the last column visible while scrolling horizontally",
+                options: [
+                  { label: "None", value: 0 },
+                  { label: "Last column", value: 1 },
+                ],
+              },
             }}
-            preferences={{ visibleContent: visibleColumnIds }}
+            preferences={{
+              contentDisplay,
+              wrapLines,
+              stripedRows,
+              contentDensity,
+              stickyColumns: { last: stickyLastColumns },
+            }}
           />
         }
         header={
@@ -456,22 +482,22 @@ export default function QrLinksListPage() {
               </SpaceBetween>
             }
           >
-            QR Links
+            Short Links
           </Header>
         }
         empty={
           <Box textAlign="center" color="inherit">
-            <Box variant="strong" textAlign="center" color="inherit">No QR links</Box>
-            <Box variant="p" padding={{ bottom: "s" }} color="inherit">No QR links to display.</Box>
+            <Box variant="strong" textAlign="center" color="inherit">No Short Links</Box>
+            <Box variant="p" padding={{ bottom: "s" }} color="inherit">No Short Links to display.</Box>
             <Button onClick={() => setCreateModalVisible(true)}>Create QR Link</Button>
           </Box>
         }
         ariaLabels={{
-          tableLabel: "QR links table",
+          tableLabel: "Short Links table",
           activateEditLabel: (col) => `Edit ${String(col.header)}`,
           cancelEditLabel: (col) => `Cancel editing ${String(col.header)}`,
           submitEditLabel: (col) => `Submit edit ${String(col.header)}`,
-          allItemsSelectionLabel: () => "Select all QR links",
+          allItemsSelectionLabel: () => "Select all Short Links",
           itemSelectionLabel: (_, item) => item.label ?? item.code,
         }}
       />

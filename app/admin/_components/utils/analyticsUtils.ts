@@ -1,4 +1,4 @@
-import type { ClickEvent, DeviceType } from "@/lib/qr-links"
+import type { ClickEvent, DeviceType } from "@/lib/short-links"
 import { parseDeviceType } from "./deviceUtils"
 
 /**

@@ -1,4 +1,4 @@
-import type { ClickEvent } from "@/lib/qr-links"
+import type { ClickEvent } from "@/lib/short-links"
 
 interface GeoResult {
   country: string | null

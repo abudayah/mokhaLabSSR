@@ -24,7 +24,7 @@ import { useProductStore } from "@/app/admin/_components/context/useProductStore
 import { useQrLinkStore } from "@/app/admin/_components/context/useQrLinkStore"
 import { useSupportTicketStore } from "@/app/admin/_components/context/useSupportTicketStore"
 import { useAppLayout } from "@/app/admin/_components/context/AppLayoutContext"
-import { parseMetricCounter, type ClickMetricSummary } from "@/lib/qr-links"
+import { parseMetricCounter, type ClickMetricSummary } from "@/lib/short-links"
 import { S3Image } from "@/components/S3Image"
 
 // ---------------------------------------------------------------------------
@@ -53,7 +53,7 @@ const boardItemI18n = {
 // ---------------------------------------------------------------------------
 // Widget registry
 // ---------------------------------------------------------------------------
-type WidgetId = "overview" | "traffic" | "tickets" | "qr-links" | "recent-posts" | "products"
+type WidgetId = "overview" | "traffic" | "tickets" | "short-links" | "recent-posts" | "products"
 
 interface WidgetData {
   title: string
@@ -82,7 +82,7 @@ const DEFAULT_LAYOUT: BoardProps.Item<WidgetData>[] = [
     data: { title: "Support tickets", disableContentPaddings: true },
   },
   {
-    id: "qr-links",
+    id: "short-links",
     rowSpan: 4,
     columnSpan: 2,
     data: { title: "QR link performance", disableContentPaddings: true },
@@ -238,8 +238,8 @@ function OverviewContent({
     <ColumnLayout columns={4} variant="text-grid">
       <StatCell title="Open tickets" value={openTickets} loading={ticketsLoading} href="/admin/support" linkText="View support" status={openTickets === 0 ? "success" : newTickets > 0 ? "error" : "warning"} />
       <StatCell title="New (unread)" value={newTickets} loading={ticketsLoading} href="/admin/support" linkText="View new tickets" status={newTickets > 0 ? "error" : "success"} />
-      <StatCell title="Total QR clicks" value={totalClicks.toLocaleString()} loading={linksLoading} href="/admin/qr-links" linkText="View QR links" />
-      <StatCell title="Active QR links" value={linksCount} loading={linksLoading} href="/admin/qr-links" linkText="Manage QR links" />
+      <StatCell title="Total QR clicks" value={totalClicks.toLocaleString()} loading={linksLoading} href="/admin/short-links" linkText="View Short Links" />
+      <StatCell title="Active Short Links" value={linksCount} loading={linksLoading} href="/admin/short-links" linkText="Manage Short Links" />
     </ColumnLayout>
   )
 }
@@ -398,9 +398,9 @@ export default function DashboardPage() {
             Support tickets
           </Header>
         )
-      case "qr-links":
+      case "short-links":
         return (
-          <Header variant="h2" counter={`(${totalClicks.toLocaleString()} clicks)`} actions={<Link href="/admin/qr-links">View all</Link>}>
+          <Header variant="h2" counter={`(${totalClicks.toLocaleString()} clicks)`} actions={<Link href="/admin/short-links">View all</Link>}>
             QR link performance
           </Header>
         )
@@ -488,13 +488,13 @@ export default function DashboardPage() {
           />
         )
 
-      case "qr-links":
+      case "short-links":
         return (
           <Table
             variant="borderless"
             loading={linksLoading}
-            loadingText="Loading QR links"
-            empty={<Box textAlign="center" color="text-body-secondary" padding="m">No QR links yet.</Box>}
+            loadingText="Loading Short Links"
+            empty={<Box textAlign="center" color="text-body-secondary" padding="m">No Short Links yet.</Box>}
             trackBy="id"
             items={topLinks}
             columnDefinitions={[
@@ -502,7 +502,7 @@ export default function DashboardPage() {
                 id: "label",
                 header: "Label",
                 isRowHeader: true,
-                cell: (l) => <Link href={`/admin/qr-links/${l.id}`} fontSize="body-s">{l.label ?? l.code}</Link>,
+                cell: (l) => <Link href={`/admin/short-links/${l.id}`} fontSize="body-s">{l.label ?? l.code}</Link>,
               },
               {
                 id: "code",
@@ -603,12 +603,12 @@ export default function DashboardPage() {
                 items={[
                   { id: "product", text: "New product", iconName: "add-plus" },
                   { id: "blog", text: "New blog post", iconName: "add-plus" },
-                  { id: "qr-link", text: "New QR link", iconName: "add-plus" },
+                  { id: "short-link", text: "New QR link", iconName: "add-plus" },
                 ]}
                 onItemClick={({ detail }) => {
                   if (detail.id === "product") router.push("/admin/products/new")
                   else if (detail.id === "blog") router.push("/admin/blog/new")
-                  else if (detail.id === "qr-link") router.push("/admin/qr-links/new")
+                  else if (detail.id === "short-link") router.push("/admin/short-links/new")
                 }}
               >
                 Create

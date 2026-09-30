@@ -1,4 +1,4 @@
-import type { DeviceType } from "@/lib/qr-links"
+import type { DeviceType } from "@/lib/short-links"
 
 export function parseDeviceType(userAgent: string): DeviceType {
   const ua = userAgent.toLowerCase()

@@ -20,12 +20,12 @@ import { useAppLayout } from "@/app/admin/_components/context/AppLayoutContext"
 
 const ALL_COLUMN_IDS = ["name", "slug", "priceUSD", "priceCAD", "actions"]
 
-const COLUMN_DISPLAY: CollectionPreferencesProps.VisibleContentOption[] = [
-  { id: "name", label: "Name", editable: false },
+const CONTENT_DISPLAY_OPTIONS: CollectionPreferencesProps.ContentDisplayOption[] = [
+  { id: "name", label: "Name", alwaysVisible: true },
   { id: "slug", label: "Slug" },
   { id: "priceUSD", label: "USD Price" },
   { id: "priceCAD", label: "CAD Price" },
-  { id: "actions", label: "Actions", editable: false },
+  { id: "actions", label: "Actions", alwaysVisible: true },
 ]
 
 // ─── Column definitions ───────────────────────────────────────────────────────
@@ -34,7 +34,7 @@ const BASE_COLUMN_DEFS: TableProps.ColumnDefinition<ProductDB>[] = [
   {
     id: "name",
     header: "Name",
-    cell: () => null, // overridden below — navigates to edit
+    cell: () => null,
     sortingField: "name",
     isRowHeader: true,
   },
@@ -58,7 +58,7 @@ const BASE_COLUMN_DEFS: TableProps.ColumnDefinition<ProductDB>[] = [
   {
     id: "actions",
     header: "Actions",
-    cell: () => null, // overridden below
+    cell: () => null,
   },
 ]
 
@@ -79,8 +79,12 @@ export default function ProductListPage() {
     sortingColumn,
     sortingDescending,
     onSortingChange,
-    visibleColumnIds,
-    setVisibleColumnIds,
+    contentDisplay,
+    wrapLines,
+    stripedRows,
+    contentDensity,
+    stickyLastColumns,
+    onPreferencesConfirm,
   } = useTablePreferences<ProductDB>({
     storageKey: "products",
     defaultSortingField: "name",
@@ -88,7 +92,6 @@ export default function ProductListPage() {
     allColumnIds: ALL_COLUMN_IDS,
   })
 
-  // Client-side sort (store returns unsorted data)
   const sorted = useMemo(() => {
     const field = (sortingColumn.sortingField ?? "name") as keyof ProductDB
     return [...products].sort((a, b) => {
@@ -99,25 +102,23 @@ export default function ProductListPage() {
     })
   }, [products, sortingColumn, sortingDescending])
 
-  const columnDefinitions = BASE_COLUMN_DEFS
-    .map((col) => {
-      if (col.id === "name") {
+  const columnDefinitions = contentDisplay
+    .filter((c) => c.visible)
+    .map(({ id }) => {
+      const base = BASE_COLUMN_DEFS.find((c) => c.id === id)!
+      if (id === "name") {
         return {
-          ...col,
+          ...base,
           cell: (item: ProductDB) => (
-            <Button
-              variant="inline-link"
-              ariaLabel={`Edit ${item.name}`}
-              onClick={() => router.push(`/admin/products/${item.id}/edit`)}
-            >
+            <Button variant="inline-link" ariaLabel={`Edit ${item.name}`} onClick={() => router.push(`/admin/products/${item.id}/edit`)}>
               {item.name}
             </Button>
           ),
         }
       }
-      if (col.id === "actions") {
+      if (id === "actions") {
         return {
-          ...col,
+          ...base,
           cell: (item: ProductDB) => (
             <ButtonDropdown
               variant="inline-icon"
@@ -129,39 +130,26 @@ export default function ProductListPage() {
                 { id: "delete", text: "Delete", iconName: "remove" },
               ]}
               onItemClick={({ detail }) => {
-                if (detail.id === "view") {
-                  window.open(`/products/${item.slug}`, "_blank")
-                } else if (detail.id === "edit") {
-                  router.push(`/admin/products/${item.id}/edit`)
-                } else if (detail.id === "delete") {
-                  setDeleteTarget(item)
-                }
+                if (detail.id === "view") window.open(`/products/${item.slug}`, "_blank")
+                else if (detail.id === "edit") router.push(`/admin/products/${item.id}/edit`)
+                else if (detail.id === "delete") setDeleteTarget(item)
               }}
             />
           ),
         }
       }
-      return col
+      return base
     })
-    .filter((col) => visibleColumnIds.includes(col.id!))
 
   async function handleDeleteConfirm() {
     if (!deleteTarget) return
     setDeleting(true)
     try {
       await deleteProducts([deleteTarget.id])
-      addNotification({
-        type: "success",
-        content: `"${deleteTarget.name}" was deleted successfully.`,
-        dismissible: true,
-      })
+      addNotification({ type: "success", content: `"${deleteTarget.name}" was deleted successfully.`, dismissible: true })
       setDeleteTarget(null)
     } catch {
-      addNotification({
-        type: "error",
-        content: `Failed to delete "${deleteTarget.name}". Please try again.`,
-        dismissible: true,
-      })
+      addNotification({ type: "error", content: `Failed to delete "${deleteTarget.name}". Please try again.`, dismissible: true })
     } finally {
       setDeleting(false)
     }
@@ -176,7 +164,12 @@ export default function ProductListPage() {
         loadingText="Loading products…"
         trackBy="id"
         columnDefinitions={columnDefinitions}
+        columnDisplay={contentDisplay}
         items={sorted}
+        wrapLines={wrapLines}
+        stripedRows={stripedRows}
+        contentDensity={contentDensity}
+        stickyColumns={{ last: stickyLastColumns }}
         sortingColumn={sortingColumn}
         sortingDescending={sortingDescending}
         onSortingChange={({ detail }) => onSortingChange(detail)}
@@ -185,14 +178,31 @@ export default function ProductListPage() {
             title="Table preferences"
             confirmLabel="Confirm"
             cancelLabel="Cancel"
-            onConfirm={({ detail }) => {
-              if (detail.visibleContent) setVisibleColumnIds([...detail.visibleContent])
+            onConfirm={({ detail }) => onPreferencesConfirm(detail)}
+            contentDisplayPreference={{
+              title: "Column order and visibility",
+              options: CONTENT_DISPLAY_OPTIONS,
             }}
-            visibleContentPreference={{
-              title: "Visible columns",
-              options: [{ label: "Columns", options: COLUMN_DISPLAY }],
+            wrapLinesPreference={{ label: "Wrap lines", description: "Enable to wrap long text" }}
+            stripedRowsPreference={{ label: "Striped rows", description: "Alternate row background colors" }}
+            contentDensityPreference={{ label: "Compact mode", description: "Reduce vertical padding in rows" }}
+            stickyColumnsPreference={{
+              lastColumns: {
+                title: "Stick last column",
+                description: "Keep the last column visible while scrolling horizontally",
+                options: [
+                  { label: "None", value: 0 },
+                  { label: "Last column", value: 1 },
+                ],
+              },
             }}
-            preferences={{ visibleContent: visibleColumnIds }}
+            preferences={{
+              contentDisplay,
+              wrapLines,
+              stripedRows,
+              contentDensity,
+              stickyColumns: { last: stickyLastColumns },
+            }}
           />
         }
         header={
@@ -201,12 +211,7 @@ export default function ProductListPage() {
             counter={`(${products.length})`}
             actions={
               <SpaceBetween direction="horizontal" size="xs">
-                <Button
-                  variant="primary"
-                  onClick={() => router.push("/admin/products/new")}
-                >
-                  Create product
-                </Button>
+                <Button variant="primary" onClick={() => router.push("/admin/products/new")}>Create product</Button>
               </SpaceBetween>
             }
           >
@@ -215,12 +220,8 @@ export default function ProductListPage() {
         }
         empty={
           <Box textAlign="center" color="inherit">
-            <Box variant="strong" textAlign="center" color="inherit">
-              No products
-            </Box>
-            <Box variant="p" padding={{ bottom: "s" }} color="inherit">
-              No products to display.
-            </Box>
+            <Box variant="strong" textAlign="center" color="inherit">No products</Box>
+            <Box variant="p" padding={{ bottom: "s" }} color="inherit">No products to display.</Box>
             <Button onClick={() => router.push("/admin/products/new")}>Create product</Button>
           </Box>
         }

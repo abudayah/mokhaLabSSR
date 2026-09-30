@@ -1,9 +1,7 @@
 "use client"
-
 import { useParams } from "next/navigation"
-import QrLinkDetailPage from "@/app/admin/_components/pages/QrLinkDetailPage"
-
+import ShortLinkDetailPage from "@/app/admin/_components/pages/ShortLinkDetailPage"
 export default function Page() {
   const params = useParams<{ id: string }>()
-  return <QrLinkDetailPage id={params.id} />
+  return <ShortLinkDetailPage id={params.id} />
 }

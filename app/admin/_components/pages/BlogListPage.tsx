@@ -23,17 +23,15 @@ import { useAppLayout } from "@/app/admin/_components/context/AppLayoutContext"
 
 const ALL_COLUMN_IDS = ["title", "status", "slug", "date", "actions"]
 
-const COLUMN_DISPLAY: CollectionPreferencesProps.VisibleContentOption[] = [
-  { id: "title", label: "Title", editable: false },
+const CONTENT_DISPLAY_OPTIONS: CollectionPreferencesProps.ContentDisplayOption[] = [
+  { id: "title", label: "Title", alwaysVisible: true },
+  { id: "status", label: "Status" },
   { id: "slug", label: "Slug" },
   { id: "date", label: "Published At" },
-  { id: "status", label: "Status" },
-  { id: "actions", label: "Actions", editable: false },
+  { id: "actions", label: "Actions", alwaysVisible: true },
 ]
 
 type SortField = "title" | "date" | "status"
-
-// ─── Status filter options ────────────────────────────────────────────────────
 
 const STATUS_OPTIONS = [
   { value: "all", label: "All statuses" },
@@ -41,26 +39,15 @@ const STATUS_OPTIONS = [
   { value: "published", label: "Published" },
 ]
 
-// ─── Static column definitions (actions cell injected at render time) ─────────
+// ─── Column definitions (title + actions injected at render time) ─────────────
 
 const BASE_COLUMN_DEFS: TableProps.ColumnDefinition<BlogPost>[] = [
   {
     id: "title",
     header: "Title",
-    cell: () => null, // overridden below — navigates to edit
+    cell: () => null,
     sortingField: "title",
     isRowHeader: true,
-  },
-  {
-    id: "slug",
-    header: "Slug",
-    cell: (item) => item.slug,
-  },
-  {
-    id: "date",
-    header: "Published At",
-    cell: (item) => item.date,
-    sortingField: "date",
   },
   {
     id: "status",
@@ -74,9 +61,20 @@ const BASE_COLUMN_DEFS: TableProps.ColumnDefinition<BlogPost>[] = [
     sortingField: "status",
   },
   {
+    id: "slug",
+    header: "Slug",
+    cell: (item) => item.slug,
+  },
+  {
+    id: "date",
+    header: "Published At",
+    cell: (item) => item.date,
+    sortingField: "date",
+  },
+  {
     id: "actions",
     header: "Actions",
-    cell: () => null, // overridden below with router injected
+    cell: () => null,
   },
 ]
 
@@ -99,8 +97,12 @@ export default function BlogListPage() {
     sortingColumn,
     sortingDescending,
     onSortingChange,
-    visibleColumnIds,
-    setVisibleColumnIds,
+    contentDisplay,
+    wrapLines,
+    stripedRows,
+    contentDensity,
+    stickyLastColumns,
+    onPreferencesConfirm,
   } = useTablePreferences<BlogPost>({
     storageKey: "blog-posts",
     defaultSortingField: "date",
@@ -132,43 +134,33 @@ export default function BlogListPage() {
     setDeleting(true)
     try {
       await deletePost(deleteTarget.id)
-      addNotification({
-        type: "success",
-        content: `"${deleteTarget.title}" was deleted successfully.`,
-        dismissible: true,
-      })
+      addNotification({ type: "success", content: `"${deleteTarget.title}" was deleted successfully.`, dismissible: true })
     } catch {
-      addNotification({
-        type: "error",
-        content: "Failed to delete post. Please try again.",
-        dismissible: true,
-      })
+      addNotification({ type: "error", content: "Failed to delete post. Please try again.", dismissible: true })
     } finally {
       setDeleting(false)
       setDeleteTarget(null)
     }
   }
 
-  // Inject router into title + actions columns, then filter to visible
-  const columnDefinitions = BASE_COLUMN_DEFS
-    .map((col) => {
-      if (col.id === "title") {
+  // Inject cells, order by contentDisplay
+  const columnDefinitions = contentDisplay
+    .filter((c) => c.visible)
+    .map(({ id }) => {
+      const base = BASE_COLUMN_DEFS.find((c) => c.id === id)!
+      if (id === "title") {
         return {
-          ...col,
+          ...base,
           cell: (item: BlogPost) => (
-            <Button
-              variant="inline-link"
-              ariaLabel={`Edit ${item.title}`}
-              onClick={() => router.push(`/admin/blog/${item.id}/edit`)}
-            >
+            <Button variant="inline-link" ariaLabel={`Edit ${item.title}`} onClick={() => router.push(`/admin/blog/${item.id}/edit`)}>
               {item.title}
             </Button>
           ),
         }
       }
-      if (col.id === "actions") {
+      if (id === "actions") {
         return {
-          ...col,
+          ...base,
           cell: (item: BlogPost) => (
             <ButtonDropdown
               variant="inline-icon"
@@ -180,21 +172,16 @@ export default function BlogListPage() {
                 { id: "delete", text: "Delete", iconName: "remove" },
               ]}
               onItemClick={({ detail }) => {
-                if (detail.id === "view") {
-                  window.open(`/blog/${item.slug}`, "_blank")
-                } else if (detail.id === "edit") {
-                  router.push(`/admin/blog/${item.id}/edit`)
-                } else if (detail.id === "delete") {
-                  setDeleteTarget(item)
-                }
+                if (detail.id === "view") window.open(`/blog/${item.slug}`, "_blank")
+                else if (detail.id === "edit") router.push(`/admin/blog/${item.id}/edit`)
+                else if (detail.id === "delete") setDeleteTarget(item)
               }}
             />
           ),
         }
       }
-      return col
+      return base
     })
-    .filter((col) => visibleColumnIds.includes(col.id!))
 
   const draftCount = posts.filter((p) => p.status === "draft").length
 
@@ -207,18 +194,18 @@ export default function BlogListPage() {
         loadingText="Loading posts…"
         trackBy="id"
         columnDefinitions={columnDefinitions}
+        columnDisplay={contentDisplay}
         items={sorted}
+        wrapLines={wrapLines}
+        stripedRows={stripedRows}
+        contentDensity={contentDensity}
+        stickyColumns={{ last: stickyLastColumns }}
         sortingColumn={sortingColumn}
         sortingDescending={sortingDescending}
         onSortingChange={({ detail }) => onSortingChange(detail)}
         filter={
           <SpaceBetween direction="horizontal" size="xs">
-            <TextFilter
-              filteringText={filterText}
-              filteringPlaceholder="Find posts"
-              filteringAriaLabel="Filter posts"
-              onChange={({ detail }) => setFilterText(detail.filteringText)}
-            />
+            <TextFilter filteringText={filterText} filteringPlaceholder="Find posts" filteringAriaLabel="Filter posts" onChange={({ detail }) => setFilterText(detail.filteringText)} />
             <Select
               selectedOption={STATUS_OPTIONS.find((o) => o.value === statusFilter) ?? STATUS_OPTIONS[0]}
               options={STATUS_OPTIONS}
@@ -232,31 +219,40 @@ export default function BlogListPage() {
             title="Table preferences"
             confirmLabel="Confirm"
             cancelLabel="Cancel"
-            onConfirm={({ detail }) => {
-              if (detail.visibleContent) setVisibleColumnIds([...detail.visibleContent])
+            onConfirm={({ detail }) => onPreferencesConfirm(detail)}
+            contentDisplayPreference={{
+              title: "Column order and visibility",
+              options: CONTENT_DISPLAY_OPTIONS,
             }}
-            visibleContentPreference={{
-              title: "Visible columns",
-              options: [{ label: "Columns", options: COLUMN_DISPLAY }],
+            wrapLinesPreference={{ label: "Wrap lines", description: "Enable to wrap long text" }}
+            stripedRowsPreference={{ label: "Striped rows", description: "Alternate row background colors" }}
+            contentDensityPreference={{ label: "Compact mode", description: "Reduce vertical padding in rows" }}
+            stickyColumnsPreference={{
+              lastColumns: {
+                title: "Stick last column",
+                description: "Keep the last column visible while scrolling horizontally",
+                options: [
+                  { label: "None", value: 0 },
+                  { label: "Last column", value: 1 },
+                ],
+              },
             }}
-            preferences={{ visibleContent: visibleColumnIds }}
+            preferences={{
+              contentDisplay,
+              wrapLines,
+              stripedRows,
+              contentDensity,
+              stickyColumns: { last: stickyLastColumns },
+            }}
           />
         }
         header={
           <Header
             variant="awsui-h1-sticky"
             counter={`(${posts.length})`}
-            description={
-              draftCount > 0
-                ? `${draftCount} draft${draftCount > 1 ? "s" : ""} not yet published`
-                : undefined
-            }
+            description={draftCount > 0 ? `${draftCount} draft${draftCount > 1 ? "s" : ""} not yet published` : undefined}
             actions={
-              <SpaceBetween direction="horizontal" size="xs">
-                <Button variant="primary" onClick={() => router.push("/admin/blog/new")}>
-                  Create post
-                </Button>
-              </SpaceBetween>
+              <Button variant="primary" onClick={() => router.push("/admin/blog/new")}>Create post</Button>
             }
           >
             Blog Posts
@@ -264,12 +260,8 @@ export default function BlogListPage() {
         }
         empty={
           <Box textAlign="center" color="inherit">
-            <Box variant="strong" textAlign="center" color="inherit">
-              No posts
-            </Box>
-            <Box variant="p" padding={{ bottom: "s" }} color="inherit">
-              No posts to display.
-            </Box>
+            <Box variant="strong" textAlign="center" color="inherit">No posts</Box>
+            <Box variant="p" padding={{ bottom: "s" }} color="inherit">No posts to display.</Box>
             <Button onClick={() => router.push("/admin/blog/new")}>Create post</Button>
           </Box>
         }

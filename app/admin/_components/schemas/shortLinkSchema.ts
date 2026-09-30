@@ -1,6 +1,6 @@
 import { z } from "zod"
 
-export const qrLinkSchema = z.object({
+export const shortLinkSchema = z.object({
   destinationUrl: z
     .string()
     .min(1, "Destination URL is required")
@@ -13,4 +13,4 @@ export const qrLinkSchema = z.object({
     .or(z.literal("")),
 })
 
-export type QrLinkFormData = z.infer<typeof qrLinkSchema>
+export type QrLinkFormData = z.infer<typeof shortLinkSchema>

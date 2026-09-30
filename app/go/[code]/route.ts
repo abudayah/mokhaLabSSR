@@ -89,7 +89,7 @@ async function recordClick({
   // ── Write raw ClickEvent ─────────────────────────────────────────────────
   const [, , existing] = await Promise.all([
     client.models.ClickEvent.create({
-      qrLinkId: link.id,
+      shortLinkId: link.id,
       clickedAt: nowIso,
       userAgent: ua,
       ip,
@@ -102,8 +102,8 @@ async function recordClick({
       lastClickedAt: nowIso,
     }),
     // Fetch existing daily summary for upsert
-    client.models.ClickMetricSummary.listClickMetricSummaryByQrLinkId({
-      qrLinkId: link.id,
+    client.models.ClickMetricSummary.listClickMetricSummaryByShortLinkId({
+      shortLinkId: link.id,
       // @ts-expect-error Amplify filter on secondary index
       filter: { dateKey: { eq: dateKey } },
     }),
@@ -123,7 +123,7 @@ async function recordClick({
   if (!summary) {
     // First click of the day for this link — CREATE
     await client.models.ClickMetricSummary.create({
-      qrLinkId: link.id,
+      shortLinkId: link.id,
       dateKey,
       totalClicks: 1,
       uniqueIps: 1,

@@ -1,7 +1,7 @@
 "use client"
 
 import { BlogPostStoreProvider } from "./context/BlogPostStoreContext"
-import { QrLinkStoreProvider } from "./context/QrLinkStoreContext"
+import { QrLinkStoreProvider } from "./context/ShortLinkStoreContext"
 import { SupportTicketStoreProvider } from "./context/SupportTicketStoreContext"
 import { ProductStoreProvider } from "./context/ProductStoreContext"
 import { NotificationProvider } from "./context/NotificationContext"

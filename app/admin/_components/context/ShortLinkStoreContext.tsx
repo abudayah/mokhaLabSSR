@@ -3,8 +3,8 @@
 import { createContext, useState, useEffect, useMemo, ReactNode } from "react"
 import { generateClient } from "aws-amplify/data"
 import type { Schema } from "@/amplify/data/resource"
-import type { QrLink, ClickEvent, ClickMetricSummary } from "@/lib/qr-links"
-import type { QrLinkFormData } from "@/app/admin/_components/schemas/qrLinkSchema"
+import type { QrLink, ClickEvent, ClickMetricSummary } from "@/lib/short-links"
+import type { QrLinkFormData } from "@/app/admin/_components/schemas/shortLinkSchema"
 import { generateUniqueCode } from "@/app/admin/_components/utils/shortCodeUtils"
 
 export interface UpdateLinkData {
@@ -20,8 +20,8 @@ export interface QrLinkStoreValue {
   createLink: (data: QrLinkFormData) => Promise<QrLink>
   updateLink: (id: string, data: UpdateLinkData) => Promise<void>
   deleteLink: (id: string) => Promise<void>
-  fetchClickEvents: (qrLinkId: string) => Promise<ClickEvent[]>
-  fetchMetricSummaries: (qrLinkId: string) => Promise<ClickMetricSummary[]>
+  fetchClickEvents: (shortLinkId: string) => Promise<ClickEvent[]>
+  fetchMetricSummaries: (shortLinkId: string) => Promise<ClickMetricSummary[]>
   /** Fetches all ClickMetricSummary records for the past `days` days (default 7) across all links */
   fetchRecentMetricSummaries: (days?: number) => Promise<ClickMetricSummary[]>
 }
@@ -45,7 +45,7 @@ function toQrLink(item: Schema["QrLink"]["type"]): QrLink {
 function toClickEvent(item: Schema["ClickEvent"]["type"]): ClickEvent {
   return {
     id: item.id,
-    qrLinkId: item.qrLinkId,
+    shortLinkId: item.shortLinkId,
     clickedAt: item.clickedAt,
     userAgent: item.userAgent ?? undefined,
     ip: item.ip ?? undefined,
@@ -139,7 +139,7 @@ export function QrLinkStoreProvider({ children }: { children: ReactNode }) {
 
   async function deleteLink(id: string): Promise<void> {
     const { data: events } = await client.models.ClickEvent.list({
-      filter: { qrLinkId: { eq: id } },
+      filter: { shortLinkId: { eq: id } },
     })
     if (events?.length) {
       await Promise.all(
@@ -153,9 +153,9 @@ export function QrLinkStoreProvider({ children }: { children: ReactNode }) {
     // observeQuery will update the list automatically
   }
 
-  async function fetchClickEvents(qrLinkId: string): Promise<ClickEvent[]> {
+  async function fetchClickEvents(shortLinkId: string): Promise<ClickEvent[]> {
     const { data: items, errors } = await client.models.ClickEvent.list({
-      filter: { qrLinkId: { eq: qrLinkId } },
+      filter: { shortLinkId: { eq: shortLinkId } },
     })
     if (errors?.length) {
       throw new Error(errors[0]?.message ?? "Failed to fetch click events")
@@ -163,16 +163,16 @@ export function QrLinkStoreProvider({ children }: { children: ReactNode }) {
     return (items ?? []).map(toClickEvent)
   }
 
-  async function fetchMetricSummaries(qrLinkId: string): Promise<ClickMetricSummary[]> {
-    const { data: items, errors } = await client.models.ClickMetricSummary.listClickMetricSummaryByQrLinkId({
-      qrLinkId,
+  async function fetchMetricSummaries(shortLinkId: string): Promise<ClickMetricSummary[]> {
+    const { data: items, errors } = await client.models.ClickMetricSummary.listClickMetricSummaryByShortLinkId({
+      shortLinkId,
     })
     if (errors?.length) {
       throw new Error(errors[0]?.message ?? "Failed to fetch metric summaries")
     }
     return (items ?? []).map((item) => ({
       id: item.id,
-      qrLinkId: item.qrLinkId,
+      shortLinkId: item.shortLinkId,
       dateKey: item.dateKey,
       totalClicks: item.totalClicks ?? 0,
       uniqueIps: item.uniqueIps ?? 0,
@@ -206,8 +206,8 @@ export function QrLinkStoreProvider({ children }: { children: ReactNode }) {
 
     const results = await Promise.all(
       allLinks.map((link) =>
-        client.models.ClickMetricSummary.listClickMetricSummaryByQrLinkId({
-          qrLinkId: link.id,
+        client.models.ClickMetricSummary.listClickMetricSummaryByShortLinkId({
+          shortLinkId: link.id,
         }).then((res) => res.data ?? [])
       )
     )
@@ -217,7 +217,7 @@ export function QrLinkStoreProvider({ children }: { children: ReactNode }) {
       .filter((item) => item.dateKey >= since)
       .map((item) => ({
         id: item.id,
-        qrLinkId: item.qrLinkId,
+        shortLinkId: item.shortLinkId,
         dateKey: item.dateKey,
         totalClicks: item.totalClicks ?? 0,
         uniqueIps: item.uniqueIps ?? 0,

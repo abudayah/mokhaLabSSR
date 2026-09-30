@@ -2,61 +2,65 @@
 
 import { useState, useEffect, useCallback } from "react"
 import type { TableProps } from "@cloudscape-design/components/table"
+import type { CollectionPreferencesProps } from "@cloudscape-design/components/collection-preferences"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
+
+export type ContentDisplayItem = { id: string; visible: boolean }
 
 interface UseTablePreferencesOptions<T> {
   /** Unique key used to namespace this table's preferences in localStorage */
   storageKey: string
-  /** Default sort field (column id / sortingField value) — resets on every page load */
+  /** Default sort field — resets on every page load, never persisted */
   defaultSortingField: string
-  /** Default sort direction — resets on every page load */
+  /** Default sort direction — resets on every page load, never persisted */
   defaultSortingDescending?: boolean
-  /** Ordered list of all column ids — used to derive the default visible set */
+  /** Ordered list of all column ids */
   allColumnIds: string[]
-  /** Column ids that should be hidden by default. Defaults to none. */
+  /** Column ids that should be hidden by default */
   defaultHiddenColumnIds?: string[]
 }
 
 interface UseTablePreferencesReturn<T> {
-  /** Pass directly to <Table sortingColumn={...}> */
+  // ── Sorting (session-only) ─────────────────────────────────────────────────
   sortingColumn: TableProps.SortingColumn<T>
-  /** Pass directly to <Table sortingDescending={...}> */
   sortingDescending: boolean
-  /** Call inside onSortingChange — updates state only, not persisted */
   onSortingChange: (detail: TableProps.SortingState<T>) => void
-  /** Current column widths keyed by column id */
+
+  // ── Column widths (persisted) ─────────────────────────────────────────────
   columnWidths: Record<string, number>
-  /** Call inside onColumnWidthsChange to update + persist */
-  onColumnWidthsChange: (
-    detail: TableProps.ColumnWidthsChangeDetail,
-    columnIds: string[]
-  ) => void
-  /** Currently visible column ids */
-  visibleColumnIds: string[]
-  /** Call when the user picks new visible columns in CollectionPreferences */
-  setVisibleColumnIds: (ids: string[]) => void
+  onColumnWidthsChange: (detail: TableProps.ColumnWidthsChangeDetail, columnIds: string[]) => void
+
+  // ── CollectionPreferences values (all persisted) ──────────────────────────
+  /** Ordered list of {id, visible} — drives column order + visibility */
+  contentDisplay: ContentDisplayItem[]
+  wrapLines: boolean
+  stripedRows: boolean
+  contentDensity: "comfortable" | "compact"
+  /** Number of columns to stick on the right (0 = none) */
+  stickyLastColumns: number
+
+  /** Pass the full detail from CollectionPreferences onConfirm */
+  onPreferencesConfirm: (detail: CollectionPreferencesProps.Preferences) => void
 }
 
 // ─── Storage helpers ──────────────────────────────────────────────────────────
 
-function load<T>(key: string, fallback: T): T {
+function load<V>(key: string, fallback: V): V {
   if (typeof window === "undefined") return fallback
   try {
     const raw = localStorage.getItem(key)
-    return raw ? (JSON.parse(raw) as T) : fallback
+    return raw ? (JSON.parse(raw) as V) : fallback
   } catch {
     return fallback
   }
 }
 
-function save<T>(key: string, value: T): void {
+function save<V>(key: string, value: V): void {
   if (typeof window === "undefined") return
   try {
     localStorage.setItem(key, JSON.stringify(value))
-  } catch {
-    // ignore quota / security errors
-  }
+  } catch {}
 }
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
@@ -68,23 +72,33 @@ export function useTablePreferences<T>({
   allColumnIds,
   defaultHiddenColumnIds = [],
 }: UseTablePreferencesOptions<T>): UseTablePreferencesReturn<T> {
-  const defaultVisible = allColumnIds.filter((id) => !defaultHiddenColumnIds.includes(id))
   const prefKey = `table-prefs-${storageKey}`
 
-  // ── Sorting — session state only, never persisted ──────────────────────────
-  const [sortingField, setSortingField] = useState<string>(defaultSortingField)
-  const [sortingDescending, setSortingDescending] = useState<boolean>(defaultSortingDescending)
+  const defaultContentDisplay: ContentDisplayItem[] = allColumnIds.map((id) => ({
+    id,
+    visible: !defaultHiddenColumnIds.includes(id),
+  }))
 
-  // ── Column widths — persisted ──────────────────────────────────────────────
+  // ── Sorting — session only ─────────────────────────────────────────────────
+  const [sortingField, setSortingField] = useState(defaultSortingField)
+  const [sortingDescending, setSortingDescending] = useState(defaultSortingDescending)
+
+  // ── Persisted preferences ──────────────────────────────────────────────────
   const [columnWidths, setColumnWidths] = useState<Record<string, number>>({})
+  const [contentDisplay, setContentDisplay] = useState<ContentDisplayItem[]>(defaultContentDisplay)
+  const [wrapLines, setWrapLines] = useState(false)
+  const [stripedRows, setStripedRows] = useState(false)
+  const [contentDensity, setContentDensity] = useState<"comfortable" | "compact">("comfortable")
+  const [stickyLastColumns, setStickyLastColumns] = useState(0)
 
-  // ── Visible columns — persisted ────────────────────────────────────────────
-  const [visibleColumnIds, setVisibleColumnIdsState] = useState<string[]>(defaultVisible)
-
-  // Hydrate persisted prefs from localStorage after mount (avoids SSR mismatch)
+  // Hydrate from localStorage after mount
   useEffect(() => {
-    setColumnWidths(load(`${prefKey}-col-widths`, {} as Record<string, number>))
-    setVisibleColumnIdsState(load(`${prefKey}-visible-cols`, defaultVisible))
+    setColumnWidths(load(`${prefKey}-col-widths`, {}))
+    setContentDisplay(load(`${prefKey}-content-display`, defaultContentDisplay))
+    setWrapLines(load(`${prefKey}-wrap-lines`, false))
+    setStripedRows(load(`${prefKey}-striped-rows`, false))
+    setContentDensity(load(`${prefKey}-content-density`, "comfortable"))
+    setStickyLastColumns(load(`${prefKey}-sticky-last`, 0))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [prefKey])
 
@@ -100,7 +114,7 @@ export function useTablePreferences<T>({
 
   const onColumnWidthsChange = useCallback(
     (detail: TableProps.ColumnWidthsChangeDetail, columnIds: string[]) => {
-      const next: Record<string, number> = { ...columnWidths }
+      const next = { ...columnWidths }
       detail.widths.forEach((w, i) => {
         const id = columnIds[i]
         if (id) next[id] = w
@@ -111,10 +125,29 @@ export function useTablePreferences<T>({
     [prefKey, columnWidths]
   )
 
-  const setVisibleColumnIds = useCallback(
-    (ids: string[]) => {
-      setVisibleColumnIdsState(ids)
-      save(`${prefKey}-visible-cols`, ids)
+  const onPreferencesConfirm = useCallback(
+    (detail: CollectionPreferencesProps.Preferences) => {
+      if (detail.contentDisplay) {
+        const next = [...detail.contentDisplay] as ContentDisplayItem[]
+        setContentDisplay(next)
+        save(`${prefKey}-content-display`, next)
+      }
+      if (detail.wrapLines !== undefined) {
+        setWrapLines(detail.wrapLines)
+        save(`${prefKey}-wrap-lines`, detail.wrapLines)
+      }
+      if (detail.stripedRows !== undefined) {
+        setStripedRows(detail.stripedRows)
+        save(`${prefKey}-striped-rows`, detail.stripedRows)
+      }
+      if (detail.contentDensity !== undefined) {
+        setContentDensity(detail.contentDensity)
+        save(`${prefKey}-content-density`, detail.contentDensity)
+      }
+      if (detail.stickyColumns?.last !== undefined) {
+        setStickyLastColumns(detail.stickyColumns.last)
+        save(`${prefKey}-sticky-last`, detail.stickyColumns.last)
+      }
     },
     [prefKey]
   )
@@ -125,7 +158,11 @@ export function useTablePreferences<T>({
     onSortingChange,
     columnWidths,
     onColumnWidthsChange,
-    visibleColumnIds,
-    setVisibleColumnIds,
+    contentDisplay,
+    wrapLines,
+    stripedRows,
+    contentDensity,
+    stickyLastColumns,
+    onPreferencesConfirm,
   }
 }

@@ -2,7 +2,7 @@
 
 ## Overview
 
-Adds short-link management with QR code generation and click analytics to the mokhaLab admin portal. Follows the exact file/folder pattern of the `blog` feature. Two DynamoDB models (`QrLink`, `ClickEvent`) back a public redirect route at `/go/[code]` and two authenticated admin pages at `/admin/qr-links`. Charts use the legacy Cloudscape `BarChart` and `PieChart` — no new chart library. Only `qrcode` + `@types/qrcode` are added as new dependencies.
+Adds short-link management with QR code generation and click analytics to the mokhaLab admin portal. Follows the exact file/folder pattern of the `blog` feature. Two DynamoDB models (`QrLink`, `ClickEvent`) back a public redirect route at `/go/[code]` and two authenticated admin pages at `/admin/short-links`. Charts use the legacy Cloudscape `BarChart` and `PieChart` — no new chart library. Only `qrcode` + `@types/qrcode` are added as new dependencies.
 
 ---
 
@@ -16,22 +16,22 @@ Adds short-link management with QR code generation and click analytics to the mo
 
   - [x] 1.2 Add `QrLink` and `ClickEvent` models to `amplify/data/resource.ts`
     - Add `QrLink` model with fields: `code` (required string), `destinationUrl` (required string), `label` (optional string), `clickCount` (integer, default 0), `lastClickedAt` (optional string)
-    - Add `ClickEvent` model with fields: `qrLinkId` (required string), `clickedAt` (required string), `userAgent` (optional string), `ip` (optional string), `referer` (optional string)
+    - Add `ClickEvent` model with fields: `shortLinkId` (required string), `clickedAt` (required string), `userAgent` (optional string), `ip` (optional string), `referer` (optional string)
     - `QrLink` authorization: `allow.authenticated()` only
     - `ClickEvent` authorization: `allow.authenticated().to(["read","create","update","delete"])` + `allow.publicApiKey().to(["create"])`
     - Keep existing `BlogPost` model and `authorizationModes` config unchanged
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5_
 
 - [x] 2. Add TypeScript types and shared interfaces
-  - [x] 2.1 Create `lib/qr-links.ts` with core interfaces
+  - [x] 2.1 Create `lib/short-links.ts` with core interfaces
     - Export `QrLink` interface: `id`, `code`, `destinationUrl`, `label?`, `createdAt`, `clickCount`, `lastClickedAt?`
-    - Export `ClickEvent` interface: `id`, `qrLinkId`, `clickedAt`, `userAgent?`, `ip?`, `referer?`, `createdAt`
+    - Export `ClickEvent` interface: `id`, `shortLinkId`, `clickedAt`, `userAgent?`, `ip?`, `referer?`, `createdAt`
     - Export `DeviceType` type: `"mobile" | "tablet" | "desktop"`
     - Export `DerivedClickData` interface: `deviceType: DeviceType`, `country?: string`, `region?: string`
     - _Requirements: 1.1, 1.2_
 
   - [x] 2.2 Update `app/admin/_components/types/admin.ts` to export `QrLinkFormData`
-    - Import and re-export `type QrLinkFormData` inferred from `qrLinkSchema` (mirrors the `BlogPostFormData` pattern)
+    - Import and re-export `type QrLinkFormData` inferred from `shortLinkSchema` (mirrors the `BlogPostFormData` pattern)
     - _Requirements: 6.2_
 
 - [x] 3. Implement utility functions
@@ -115,7 +115,7 @@ Adds short-link management with QR code generation and click analytics to the mo
   - Ensure all tests pass, ask the user if questions arise.
 
 - [x] 5. Add Zod schema and store context
-  - [x] 5.1 Create `app/admin/_components/schemas/qrLinkSchema.ts`
+  - [x] 5.1 Create `app/admin/_components/schemas/shortLinkSchema.ts`
     - Implement Zod schema with: `destinationUrl` (required, `.url()`), `label` (optional string), `customCode` (optional string with `^[A-Za-z0-9]{4,6}$` regex or `z.literal("")`)
     - Export `QrLinkFormData` type inferred from the schema
     - _Requirements: 6.2, 6.3, 6.4, 6.8_
@@ -125,8 +125,8 @@ Adds short-link management with QR code generation and click analytics to the mo
     - Use `generateClient<Schema>({ authMode: "userPool" })` for all operations
     - Export `QrLinkStoreValue` interface with: `links`, `loading`, `getLinkById`, `getLinkByCode`, `createLink`, `deleteLink`, `fetchClickEvents`
     - `createLink`: auto-generate code if `customCode` empty (using `generateUniqueCode`), validate uniqueness, call `client.models.QrLink.create`, prepend to `links` state
-    - `deleteLink`: list all `ClickEvent` records by `qrLinkId`, batch delete them, then delete the `QrLink`
-    - `fetchClickEvents(qrLinkId)`: on-demand fetch, not cached in store state
+    - `deleteLink`: list all `ClickEvent` records by `shortLinkId`, batch delete them, then delete the `QrLink`
+    - `fetchClickEvents(shortLinkId)`: on-demand fetch, not cached in store state
     - On mount: fetch all `QrLink` records sorted by `createdAt` descending
     - Export `QrLinkStoreContext`
     - _Requirements: 2.1, 2.3, 2.4, 2.6, 7.3, 10.1, 10.2, 10.3_
@@ -143,8 +143,8 @@ Adds short-link management with QR code generation and click analytics to the mo
     - _Requirements: 10.1_
 
   - [x] 6.2 Update `app/admin/_components/AdminLayout.tsx`
-    - Add `if (path.startsWith("/admin/qr-links")) return "/admin/qr-links"` to `getActiveHref` before the `/admin` base case
-    - Add `{ type: "link", text: "QR Links", href: "/admin/qr-links" }` to the `SideNavigation` items array, after "Blog Posts"
+    - Add `if (path.startsWith("/admin/short-links")) return "/admin/short-links"` to `getActiveHref` before the `/admin` base case
+    - Add `{ type: "link", text: "Short Links", href: "/admin/short-links" }` to the `SideNavigation` items array, after "Blog Posts"
     - _Requirements: 9.1, 9.2, 9.3_
 
 - [x] 7. Implement the public redirect handler
@@ -155,27 +155,27 @@ Adds short-link management with QR code generation and click analytics to the mo
     - Return `NextResponse.redirect(link.destinationUrl, 302)` immediately
     - Fire-and-forget `void Promise.all([ClickEvent.create(...), QrLink.update(...)])` with `.catch(() => {})`
     - Read headers: `user-agent`, `x-forwarded-for` (first IP), `cf-connecting-ip` fallback, `referer`
-    - ClickEvent fields: `qrLinkId`, `clickedAt` (ISO 8601), `userAgent`, `ip`, `referer`
+    - ClickEvent fields: `shortLinkId`, `clickedAt` (ISO 8601), `userAgent`, `ip`, `referer`
     - QrLink update fields: `clickCount: (link.clickCount ?? 0) + 1`, `lastClickedAt`
     - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 3.8, 3.9_
 
-- [x] 8. Build the QR Links List Page and Create/Delete modals
-  - [x] 8.1 Create `app/admin/_components/pages/QrLinksListPage.tsx`
+- [x] 8. Build the Short Links List Page and Create/Delete modals
+  - [x] 8.1 Create `app/admin/_components/pages/ShortLinksListPage.tsx`
     - Cloudscape `Table` with `variant="full-page"`, `trackBy="id"`, `sortingColumn`/`sortingDescending`/`onSortingChange` state
-    - Columns: Label/Code (link to `/admin/qr-links/[id]`), Short Code, Destination URL, Click Count, Last Clicked (formatted or "Never"), Actions
+    - Columns: Label/Code (link to `/admin/short-links/[id]`), Short Code, Destination URL, Click Count, Last Clicked (formatted or "Never"), Actions
     - Actions column: "Download QR Code" link-button (calls `downloadQrSvg`) and "Delete" link-button (opens `DeleteQrLinkModal`)
     - Table header: "Create QR Link" primary button (opens `CreateQrLinkModal`)
     - `loading` and `loadingText` props wired to store `loading`
     - Empty state with Cloudscape `Box` and "Create QR Link" CTA
-    - `CreateQrLinkModal`: Cloudscape `Modal` with `react-hook-form` + `zodResolver(qrLinkSchema)`, `mode: "onBlur"`, `reValidateMode: "onChange"`, Cloudscape form controls; on submit calls `createLink(data)`; success notification "QR Link created."
+    - `CreateQrLinkModal`: Cloudscape `Modal` with `react-hook-form` + `zodResolver(shortLinkSchema)`, `mode: "onBlur"`, `reValidateMode: "onChange"`, Cloudscape form controls; on submit calls `createLink(data)`; success notification "QR Link created."
     - `DeleteQrLinkModal`: Cloudscape `Modal` with confirmation text "Delete short link [code]? This will permanently remove the link and all click history." + "Cancel" / "Delete" buttons; on confirm calls `deleteLink(id)`; success notification "QR Link deleted."
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7, 5.8, 5.9, 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 6.8, 6.9, 7.1, 7.2, 7.4, 7.5, 7.6_
 
-  - [x] 8.2 Create `app/admin/(portal)/qr-links/page.tsx`
-    - Thin wrapper: `"use client"` + `import QrLinksListPage` + `export default function Page() { return <QrLinksListPage /> }`
+  - [x] 8.2 Create `app/admin/(portal)/short-links/page.tsx`
+    - Thin wrapper: `"use client"` + `import ShortLinksListPage` + `export default function Page() { return <ShortLinksListPage /> }`
     - _Requirements: 5.1_
 
-- [x] 9. Build the QR Links Detail Page
+- [x] 9. Build the Short Links Detail Page
   - [x] 9.1 Create `app/admin/_components/pages/QrLinkDetailPage.tsx`
     - Receive `id` prop from page file
     - On mount: call `getLinkById(id)`; if not found show Cloudscape `Alert` type="error" with "QR Link not found."
@@ -189,7 +189,7 @@ Adds short-link management with QR code generation and click analytics to the mo
     - Geo failures handled gracefully: affected entries show "Unknown"; charts still render
     - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5, 8.6, 8.7, 8.8, 8.9, 8.10_
 
-  - [x] 9.2 Create `app/admin/(portal)/qr-links/[id]/page.tsx`
+  - [x] 9.2 Create `app/admin/(portal)/short-links/[id]/page.tsx`
     - Thin wrapper: `"use client"` + `useParams` to extract `id` + `import QrLinkDetailPage` + render with `id` prop
     - _Requirements: 8.1_
 
@@ -205,7 +205,7 @@ Adds short-link management with QR code generation and click analytics to the mo
 - Redirect handler (`app/go/[code]/route.ts`) uses default API key auth — do NOT pass `authMode: "userPool"`
 - Admin store uses `authMode: "userPool"` — do NOT use the default API key client in admin components
 - Charts use `BarChart` and `PieChart` from `@cloudscape-design/components` (already installed) — do NOT import from `@cloudscape-design/chart-components`
-- `QrLinkFormData` is exported from both `schemas/qrLinkSchema.ts` (primary) and re-exported from `types/admin.ts` (for consistency with blog pattern)
+- `QrLinkFormData` is exported from both `schemas/shortLinkSchema.ts` (primary) and re-exported from `types/admin.ts` (for consistency with blog pattern)
 - ip-api.com geolocation is called client-side in the detail page only — never on the redirect hot path
 - Folder structure mirrors the blog feature exactly — thin `page.tsx` wrappers, logic in `_components/pages/`
 

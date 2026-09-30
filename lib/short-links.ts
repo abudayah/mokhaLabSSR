@@ -10,7 +10,7 @@ export interface QrLink {
 
 export interface ClickEvent {
   id: string
-  qrLinkId: string
+  shortLinkId: string
   clickedAt: string
   userAgent?: string
   ip?: string
@@ -29,7 +29,7 @@ export interface DerivedClickData {
 /** Daily aggregated metrics for a QR link. Mirrors the ClickMetricSummary DynamoDB model. */
 export interface ClickMetricSummary {
   id: string
-  qrLinkId: string
+  shortLinkId: string
   dateKey: string           // "YYYY-MM-DD"
   totalClicks: number
   uniqueIps: number

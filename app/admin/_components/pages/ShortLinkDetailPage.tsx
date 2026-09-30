@@ -33,7 +33,7 @@ import {
   parseMetricCounter,
   parseHourDistribution,
   type QrLink,
-} from "@/lib/qr-links"
+} from "@/lib/short-links"
 import { useAppLayout } from "@/app/admin/_components/context/AppLayoutContext"
 
 const BASE_URL = "https://mokhalab.com"
@@ -151,12 +151,12 @@ function EditQrLinkModal({ link, onDismiss }: { link: QrLink; onDismiss: () => v
         <Box float="right">
           <SpaceBetween direction="horizontal" size="xs">
             <Button variant="link" formAction="none" onClick={onDismiss}>Cancel</Button>
-            <Button variant="primary" formAction="submit" form="edit-qr-link-form" loading={isSubmitting}>Save</Button>
+            <Button variant="primary" formAction="submit" form="edit-short-link-form" loading={isSubmitting}>Save</Button>
           </SpaceBetween>
         </Box>
       }
     >
-      <form id="edit-qr-link-form" onSubmit={handleSubmit(onSubmit)} noValidate>
+      <form id="edit-short-link-form" onSubmit={handleSubmit(onSubmit)} noValidate>
         <Form>
           <SpaceBetween size="l">
             <FormField label="Destination URL" errorText={get(errors, "destinationUrl.message")}>

@@ -1,8 +1,8 @@
 "use client"
 
 import { useContext } from "react"
-import { QrLinkStoreContext } from "./QrLinkStoreContext"
-import type { QrLinkStoreValue } from "./QrLinkStoreContext"
+import { QrLinkStoreContext } from "./ShortLinkStoreContext"
+import type { QrLinkStoreValue } from "./ShortLinkStoreContext"
 
 export function useQrLinkStore(): QrLinkStoreValue {
   const ctx = useContext(QrLinkStoreContext)

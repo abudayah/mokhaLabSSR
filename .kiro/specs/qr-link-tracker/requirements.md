@@ -2,7 +2,7 @@
 
 ## Introduction
 
-The QR Code Link Tracker is a feature for the mokhaLab admin portal that allows administrators to create short links paired with downloadable QR codes, and track click analytics (device type and geographic location) per link. Short codes are auto-generated (4–6 random alphanumeric characters) with optional admin override. A public Next.js route (`/go/[code]`) handles redirects and records click events for unauthenticated visitors. Authenticated admins manage links and view analytics via two new pages added to the admin portal under `/admin/qr-links`.
+The QR Code Link Tracker is a feature for the mokhaLab admin portal that allows administrators to create short links paired with downloadable QR codes, and track click analytics (device type and geographic location) per link. Short codes are auto-generated (4–6 random alphanumeric characters) with optional admin override. A public Next.js route (`/go/[code]`) handles redirects and records click events for unauthenticated visitors. Authenticated admins manage links and view analytics via two new pages added to the admin portal under `/admin/short-links`.
 
 ---
 
@@ -14,9 +14,9 @@ The QR Code Link Tracker is a feature for the mokhaLab admin portal that allows 
 - **QR Code Image**: An SVG-format image encoding the full redirect URL (`https://www.mokhalab.com/go/[code]`), downloadable from the admin portal.
 - **Redirect Handler**: The Next.js API route at `app/go/[code]/route.ts` that resolves the short code, records a Click Event with raw request metadata, and issues an HTTP 302 redirect to the destination URL — with zero external API calls on the hot path.
 - **Deferred Analytics Processing**: Device type classification (via UA parser) and IP geolocation lookups happen client-side in the admin detail page when an admin views analytics, keeping the redirect path fast.
-- **QR Links List Page**: The admin page at `/admin/qr-links` listing all QR Links with click summaries.
-- **QR Links Detail Page**: The admin page at `/admin/qr-links/[id]` showing per-link analytics charts, processing raw Click Event data on load.
-- **QR Link Store**: The React context (`QrLinkStoreContext`) providing CRUD operations and local state for QR Links in the admin portal.
+- **Short Links List Page**: The admin page at `/admin/short-links` listing all Short Links with click summaries.
+- **Short Links Detail Page**: The admin page at `/admin/short-links/[id]` showing per-link analytics charts, processing raw Click Event data on load.
+- **QR Link Store**: The React context (`QrLinkStoreContext`) providing CRUD operations and local state for Short Links in the admin portal.
 - **IP Geolocation API**: A third-party free-tier HTTP API (e.g. `ip-api.com`) called client-side in the admin detail page to resolve stored IP addresses to country and region — never called on the redirect hot path.
 - **UA Parser**: A client-side library (e.g. `ua-parser-js`) used in the admin detail page to classify stored raw User-Agent strings into `mobile`, `tablet`, or `desktop`.
 - **Device Type**: A classification of a raw User-Agent string into one of three categories: `mobile`, `tablet`, or `desktop`, derived in the admin UI.
@@ -34,7 +34,7 @@ The QR Code Link Tracker is a feature for the mokhaLab admin portal that allows 
 #### Acceptance Criteria
 
 1. THE Amplify Data Schema SHALL define a `QrLink` model with fields: `id` (auto UUID), `code` (required string, unique), `destinationUrl` (required string), `label` (optional string), `createdAt` (auto timestamp), `clickCount` (integer, default 0), `lastClickedAt` (optional string).
-2. THE Amplify Data Schema SHALL define a `ClickEvent` model with fields: `id` (auto UUID), `qrLinkId` (required string), `clickedAt` (required ISO 8601 string), `userAgent` (optional string), `ip` (optional string), `referer` (optional string).
+2. THE Amplify Data Schema SHALL define a `ClickEvent` model with fields: `id` (auto UUID), `shortLinkId` (required string), `clickedAt` (required ISO 8601 string), `userAgent` (optional string), `ip` (optional string), `referer` (optional string).
 3. THE `QrLink` model SHALL use authorization rules that allow `authenticated` users full access and deny all public (unauthenticated) access.
 4. THE `ClickEvent` model SHALL use authorization rules that allow `authenticated` users read access and allow unauthenticated public API key access to create-only operations so the Redirect Handler can record clicks without a Cognito session.
 5. WHEN the Amplify backend is deployed, THE Amplify Data Schema SHALL expose both `QrLink` and `ClickEvent` models via the AppSync GraphQL API.
@@ -88,21 +88,21 @@ The QR Code Link Tracker is a feature for the mokhaLab admin portal that allows 
 
 ---
 
-### Requirement 5: Admin QR Links List Page
+### Requirement 5: Admin Short Links List Page
 
-**User Story:** As an admin, I want a paginated table of all QR Links so that I can see an overview of all short links and their usage.
+**User Story:** As an admin, I want a paginated table of all Short Links so that I can see an overview of all short links and their usage.
 
 #### Acceptance Criteria
 
-1. THE Admin UI SHALL provide a page at `/admin/qr-links` rendering a Cloudscape `Table` component with `variant="full-page"`.
-2. THE QR Links List Page SHALL display the following columns for each QR Link: Label (or short code if label is absent), Short Code, Destination URL, Click Count, Last Clicked (formatted date or "Never"), and an Actions column.
-3. WHEN the QR Links List Page loads, THE QR Link Store SHALL fetch all `QrLink` records from DynamoDB and display them sorted by `createdAt` descending.
-4. THE QR Links List Page SHALL include a primary action button labeled "Create QR Link" in the table header.
-5. WHEN an admin clicks a short code or label in the table, THE Admin UI SHALL navigate to the QR Links Detail Page for that record.
-6. THE QR Links List Page SHALL display a "Download QR Code" action for each row.
-7. THE QR Links List Page SHALL display a "Delete" action for each row.
-8. WHILE the QR Links List Page is loading data, THE Admin UI SHALL display the Cloudscape `Table` loading state.
-9. IF no QR Links exist, THEN THE Admin UI SHALL display the Cloudscape `Table` empty state with a prompt to create the first link.
+1. THE Admin UI SHALL provide a page at `/admin/short-links` rendering a Cloudscape `Table` component with `variant="full-page"`.
+2. THE Short Links List Page SHALL display the following columns for each QR Link: Label (or short code if label is absent), Short Code, Destination URL, Click Count, Last Clicked (formatted date or "Never"), and an Actions column.
+3. WHEN the Short Links List Page loads, THE QR Link Store SHALL fetch all `QrLink` records from DynamoDB and display them sorted by `createdAt` descending.
+4. THE Short Links List Page SHALL include a primary action button labeled "Create QR Link" in the table header.
+5. WHEN an admin clicks a short code or label in the table, THE Admin UI SHALL navigate to the Short Links Detail Page for that record.
+6. THE Short Links List Page SHALL display a "Download QR Code" action for each row.
+7. THE Short Links List Page SHALL display a "Delete" action for each row.
+8. WHILE the Short Links List Page is loading data, THE Admin UI SHALL display the Cloudscape `Table` loading state.
+9. IF no Short Links exist, THEN THE Admin UI SHALL display the Cloudscape `Table` empty state with a prompt to create the first link.
 
 ---
 
@@ -112,7 +112,7 @@ The QR Code Link Tracker is a feature for the mokhaLab admin portal that allows 
 
 #### Acceptance Criteria
 
-1. THE Admin UI SHALL render the Create QR Link form as a Cloudscape `Modal` or dedicated page accessible from the QR Links List Page.
+1. THE Admin UI SHALL render the Create QR Link form as a Cloudscape `Modal` or dedicated page accessible from the Short Links List Page.
 2. THE Create QR Link form SHALL include a "Destination URL" field (required), a "Label" field (optional), and a "Custom Short Code" field (optional, 4–6 alphanumeric characters).
 3. WHEN the "Destination URL" field value does not match a valid HTTP/HTTPS URL pattern, THE Admin UI SHALL display a validation error on blur.
 4. WHEN the "Custom Short Code" field value does not match `^[A-Za-z0-9]{4,6}$`, THE Admin UI SHALL display a validation error on change.
@@ -139,20 +139,20 @@ The QR Code Link Tracker is a feature for the mokhaLab admin portal that allows 
 
 ---
 
-### Requirement 8: Admin QR Links Detail Page
+### Requirement 8: Admin Short Links Detail Page
 
 **User Story:** As an admin, I want a detail page for each QR Link showing analytics charts so that I can understand traffic patterns and campaign performance.
 
 #### Acceptance Criteria
 
-1. THE Admin UI SHALL provide a page at `/admin/qr-links/[id]` rendering the QR Link detail view.
-2. WHEN the QR Links Detail Page loads, THE Admin UI SHALL fetch all `ClickEvent` records associated with the `QrLink` identified by `id`.
-3. THE QR Links Detail Page SHALL display a "Clicks Over Time" chart showing click counts grouped by day for the trailing 30 days, derived from the `clickedAt` timestamps of stored `ClickEvent` records.
-4. THE QR Links Detail Page SHALL display a "Device Type Breakdown" chart showing the proportion of clicks by device category (`mobile`, `tablet`, `desktop`), derived by parsing the stored `userAgent` strings client-side using a UA parser library.
-5. THE QR Links Detail Page SHALL display a "Location Breakdown" chart showing the top 10 countries by click count, derived by calling the IP Geolocation API client-side with the stored `ip` values from `ClickEvent` records.
-6. THE QR Links Detail Page SHALL display the QR Link metadata: label, short code, destination URL, total click count, and creation date.
-7. THE QR Links Detail Page SHALL include a "Download QR Code" button that triggers SVG download as defined in Requirement 4.
-8. WHILE the QR Links Detail Page is loading click data, THE Admin UI SHALL display Cloudscape loading indicators in place of the charts.
+1. THE Admin UI SHALL provide a page at `/admin/short-links/[id]` rendering the QR Link detail view.
+2. WHEN the Short Links Detail Page loads, THE Admin UI SHALL fetch all `ClickEvent` records associated with the `QrLink` identified by `id`.
+3. THE Short Links Detail Page SHALL display a "Clicks Over Time" chart showing click counts grouped by day for the trailing 30 days, derived from the `clickedAt` timestamps of stored `ClickEvent` records.
+4. THE Short Links Detail Page SHALL display a "Device Type Breakdown" chart showing the proportion of clicks by device category (`mobile`, `tablet`, `desktop`), derived by parsing the stored `userAgent` strings client-side using a UA parser library.
+5. THE Short Links Detail Page SHALL display a "Location Breakdown" chart showing the top 10 countries by click count, derived by calling the IP Geolocation API client-side with the stored `ip` values from `ClickEvent` records.
+6. THE Short Links Detail Page SHALL display the QR Link metadata: label, short code, destination URL, total click count, and creation date.
+7. THE Short Links Detail Page SHALL include a "Download QR Code" button that triggers SVG download as defined in Requirement 4.
+8. WHILE the Short Links Detail Page is loading click data, THE Admin UI SHALL display Cloudscape loading indicators in place of the charts.
 9. IF a `QrLink` with the requested `id` does not exist, THEN THE Admin UI SHALL display a Cloudscape `Alert` with type "error" and the message "QR Link not found."
 10. IF no Click Events exist for the QR Link, THEN THE Admin UI SHALL display empty state messages in place of the charts.
 
@@ -160,13 +160,13 @@ The QR Code Link Tracker is a feature for the mokhaLab admin portal that allows 
 
 ### Requirement 9: Admin Navigation
 
-**User Story:** As an admin, I want a "QR Links" entry in the side navigation so that I can access the feature from anywhere in the admin portal.
+**User Story:** As an admin, I want a "Short Links" entry in the side navigation so that I can access the feature from anywhere in the admin portal.
 
 #### Acceptance Criteria
 
-1. THE AdminLayout SHALL include a `SideNavigation` item with `text: "QR Links"` and `href: "/admin/qr-links"`.
-2. WHEN the current pathname starts with `/admin/qr-links`, THE AdminLayout SHALL set the `activeHref` of the `SideNavigation` to `"/admin/qr-links"`.
-3. THE `getActiveHref` function in `AdminLayout.tsx` SHALL be updated to handle the `/admin/qr-links` prefix.
+1. THE AdminLayout SHALL include a `SideNavigation` item with `text: "Short Links"` and `href: "/admin/short-links"`.
+2. WHEN the current pathname starts with `/admin/short-links`, THE AdminLayout SHALL set the `activeHref` of the `SideNavigation` to `"/admin/short-links"`.
+3. THE `getActiveHref` function in `AdminLayout.tsx` SHALL be updated to handle the `/admin/short-links` prefix.
 
 ---
 
