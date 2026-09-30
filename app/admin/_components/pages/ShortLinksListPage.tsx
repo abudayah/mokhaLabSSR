@@ -103,7 +103,7 @@ function CreateQrLinkModal({ visible, onDismiss }: CreateQrLinkModalProps) {
   async function onSubmit(data: QrLinkFormData) {
     try {
       await createLink(data)
-      addNotification({ type: "success", content: "QR Link created.", dismissible: true })
+      addNotification({ type: "success", content: "Short Link created.", dismissible: true })
       reset()
       onDismiss()
     } catch (err) {
@@ -119,7 +119,7 @@ function CreateQrLinkModal({ visible, onDismiss }: CreateQrLinkModalProps) {
     <Modal
       visible={visible}
       onDismiss={handleDismiss}
-      header="Create QR Link"
+      header="Create Short Link"
       footer={
         <Box float="right">
           <SpaceBetween direction="horizontal" size="xs">
@@ -186,7 +186,7 @@ function EditQrLinkModal({ link, onDismiss }: EditQrLinkModalProps) {
   async function onSubmit(data: EditFormData) {
     try {
       await updateLink(link.id, data)
-      addNotification({ type: "success", content: "QR Link updated.", dismissible: true })
+      addNotification({ type: "success", content: "Short Link updated.", dismissible: true })
       onDismiss()
     } catch (err) {
       addNotification({
@@ -201,7 +201,7 @@ function EditQrLinkModal({ link, onDismiss }: EditQrLinkModalProps) {
     <Modal
       visible
       onDismiss={onDismiss}
-      header="Edit QR Link"
+      header="Edit Short Link"
       footer={
         <Box float="right">
           <SpaceBetween direction="horizontal" size="xs">
@@ -243,7 +243,7 @@ function DeleteQrLinkModal({ link, onDismiss }: DeleteQrLinkModalProps) {
     setDeleting(true)
     try {
       await deleteLink(link.id)
-      addNotification({ type: "success", content: "QR Link deleted.", dismissible: true })
+      addNotification({ type: "success", content: "Short Link deleted.", dismissible: true })
       onDismiss()
     } catch (err) {
       addNotification({
@@ -259,7 +259,7 @@ function DeleteQrLinkModal({ link, onDismiss }: DeleteQrLinkModalProps) {
     <Modal
       visible
       onDismiss={() => !deleting && onDismiss()}
-      header="Delete QR Link"
+      header="Delete Short Link"
       footer={
         <Box float="right">
           <SpaceBetween direction="horizontal" size="xs">
@@ -477,7 +477,7 @@ export default function ShortLinksListPage() {
             actions={
               <SpaceBetween direction="horizontal" size="xs">
                 <Button variant="primary" onClick={() => setCreateModalVisible(true)}>
-                  Create QR Link
+                  Create Short Link
                 </Button>
               </SpaceBetween>
             }
@@ -489,7 +489,7 @@ export default function ShortLinksListPage() {
           <Box textAlign="center" color="inherit">
             <Box variant="strong" textAlign="center" color="inherit">No Short Links</Box>
             <Box variant="p" padding={{ bottom: "s" }} color="inherit">No Short Links to display.</Box>
-            <Button onClick={() => setCreateModalVisible(true)}>Create QR Link</Button>
+            <Button onClick={() => setCreateModalVisible(true)}>Create Short Link</Button>
           </Box>
         }
         ariaLabels={{

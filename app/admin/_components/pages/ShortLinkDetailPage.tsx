@@ -211,7 +211,7 @@ export default function QrLinkDetailPage({ id }: { id: string }) {
 
   if (!link) {
     return (
-      <ContentLayout header={<Header variant="h1">QR Link</Header>}>
+      <ContentLayout header={<Header variant="h1">Short Link</Header>}>
         <Alert type="error">QR link not found.</Alert>
       </ContentLayout>
     )

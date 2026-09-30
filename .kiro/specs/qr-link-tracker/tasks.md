@@ -164,11 +164,11 @@ Adds short-link management with QR code generation and click analytics to the mo
     - Cloudscape `Table` with `variant="full-page"`, `trackBy="id"`, `sortingColumn`/`sortingDescending`/`onSortingChange` state
     - Columns: Label/Code (link to `/admin/short-links/[id]`), Short Code, Destination URL, Click Count, Last Clicked (formatted or "Never"), Actions
     - Actions column: "Download QR Code" link-button (calls `downloadQrSvg`) and "Delete" link-button (opens `DeleteQrLinkModal`)
-    - Table header: "Create QR Link" primary button (opens `CreateQrLinkModal`)
+    - Table header: "Create Short Link" primary button (opens `CreateQrLinkModal`)
     - `loading` and `loadingText` props wired to store `loading`
-    - Empty state with Cloudscape `Box` and "Create QR Link" CTA
-    - `CreateQrLinkModal`: Cloudscape `Modal` with `react-hook-form` + `zodResolver(shortLinkSchema)`, `mode: "onBlur"`, `reValidateMode: "onChange"`, Cloudscape form controls; on submit calls `createLink(data)`; success notification "QR Link created."
-    - `DeleteQrLinkModal`: Cloudscape `Modal` with confirmation text "Delete short link [code]? This will permanently remove the link and all click history." + "Cancel" / "Delete" buttons; on confirm calls `deleteLink(id)`; success notification "QR Link deleted."
+    - Empty state with Cloudscape `Box` and "Create Short Link" CTA
+    - `CreateQrLinkModal`: Cloudscape `Modal` with `react-hook-form` + `zodResolver(shortLinkSchema)`, `mode: "onBlur"`, `reValidateMode: "onChange"`, Cloudscape form controls; on submit calls `createLink(data)`; success notification "Short Link created."
+    - `DeleteQrLinkModal`: Cloudscape `Modal` with confirmation text "Delete short link [code]? This will permanently remove the link and all click history." + "Cancel" / "Delete" buttons; on confirm calls `deleteLink(id)`; success notification "Short Link deleted."
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7, 5.8, 5.9, 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 6.8, 6.9, 7.1, 7.2, 7.4, 7.5, 7.6_
 
   - [x] 8.2 Create `app/admin/(portal)/short-links/page.tsx`
@@ -178,7 +178,7 @@ Adds short-link management with QR code generation and click analytics to the mo
 - [x] 9. Build the Short Links Detail Page
   - [x] 9.1 Create `app/admin/_components/pages/QrLinkDetailPage.tsx`
     - Receive `id` prop from page file
-    - On mount: call `getLinkById(id)`; if not found show Cloudscape `Alert` type="error" with "QR Link not found."
+    - On mount: call `getLinkById(id)`; if not found show Cloudscape `Alert` type="error" with "Short Link not found."
     - Fetch click events via `fetchClickEvents(id)` on load; show Cloudscape `Spinner` / loading indicator in place of each chart while loading
     - Header: link label/code + "Download QR Code" button (calls `generateQrSvg` then `downloadQrSvg`)
     - Metadata box: destination URL, total clicks, created date, short code

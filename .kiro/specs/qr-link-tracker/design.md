@@ -326,11 +326,11 @@ Full-page Cloudscape `Table` with:
 - `variant="full-page"`, `trackBy="id"`
 - `sortingColumn` / `sortingDescending` / `onSortingChange` state
 - Columns: Label/Code, Short Code, Destination URL, Click Count, Last Clicked, Actions
-- Header actions: "Create QR Link" primary button → opens `CreateQrLinkModal`
+- Header actions: "Create Short Link" primary button → opens `CreateQrLinkModal`
 - Row actions: "Download QR Code" (inline-link button → `downloadQrSvg`) and "Delete" (inline-link → opens `DeleteQrLinkModal`)
 - Label/code cell is a clickable link navigating to `/admin/short-links/[id]`
 - Loading state via `loading={loading}` and `loadingText`
-- Empty state with Cloudscape `Box` and "Create QR Link" CTA button
+- Empty state with Cloudscape `Box` and "Create Short Link" CTA button
 
 ### `CreateQrLinkModal` (inline in ShortLinksListPage or separate file)
 
